@@ -1,5 +1,8 @@
 # AnywhereDo
 
+[![CI](https://github.com/Monkey0803/anywheredo/actions/workflows/ci.yml/badge.svg)](https://github.com/Monkey0803/anywheredo/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 macOS 上的菜单栏小工具：**选中一段文字，卡片直接贴在选区正下方**（像输入法候选框那样），
 不用先复制、不碰剪贴板。
 
@@ -94,10 +97,18 @@ PasteboardWatcher                   SelectionWatcher
 需要 Xcode / Swift 工具链（macOS 13+）。
 
 ```bash
-swift test                 # 26 个单元测试：分类、算式、JSON、Base64、颜色、时间、建议生成
+swift test                 # 30 个单元测试：分类、算式、JSON、Base64、颜色、时间、建议生成
 ./scripts/build_app.sh     # 产出 build/AnywhereDo.app（ad-hoc 签名）
 open build/AnywhereDo.app  # 启动：菜单栏出现火花图标
 ```
+
+分发用（arm64 + x86_64 通用二进制）：
+
+```bash
+UNIVERSAL=1 ./scripts/build_app.sh
+```
+
+push 到 `main` 会自动跑 GitHub Actions：构建 + 单元测试 + 打包通用 `.app`（作为 artifact 可下载）。
 
 App 图标（`Resources/AppIcon.icns`）和菜单栏图标已经生成好了，直接构建即可。
 改了标识或想换一套方案，跑一次 `./scripts/build_icons.sh [方案名]` 再重新构建；
