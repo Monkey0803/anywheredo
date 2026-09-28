@@ -71,6 +71,9 @@ Selection mode offers two quieter variants (both in Settings → Popup, off by d
   If the pointer already rests on the icon when the drag ends, it expands immediately.
 - **Modifier shortcut**: holding ⌘ or ⌥ while selecting runs the first suggestion straight away,
   with no card. It is a zero-latency path and **never calls the AI** (AI still needs an explicit click).
+  > Note: this path **cannot be self-tested with synthetic events** — a synthesized `flagsChanged`
+  > does not change `NSEvent.modifierFlags` (which is why there is no debug command for it), so it
+  > can only be confirmed by actually holding the key.
 
 The "Ignored apps" list in the settings lets you pick from **currently running apps**
 instead of typing bundle ids (manually entered ids still work for apps that are closed).

@@ -33,6 +33,19 @@ if arguments.contains("--version") {
     exit(0)
 }
 
+// 未知的 `--参数` 不应该静默落进 GUI 模式：那会多起一个实例，导致双弹窗（调试时踩过两次）。
+// 只检查双横线参数，避免误伤 `--analyze -`（读 stdin）和 `-AppleLanguages` 这类系统参数。
+let knownFlags: Set<String> = [
+    "--help", "--version", "--analyze", "--check-update", "--strings", "--render-hover",
+    "--hover-demo", "--anchor-check", "--accessibility", "--selection",
+    "--copy-probe", "--settings",
+]
+if let unknown = arguments.dropFirst().first(where: { $0.hasPrefix("--") && !knownFlags.contains($0) }) {
+    FileHandle.standardError.write(Data("未知参数：\(unknown)\n\n".utf8))
+    print(L10n.t("cli.help"))
+    exit(64)
+}
+
 if let index = arguments.firstIndex(of: "--analyze") {
     let rest = Array(arguments.dropFirst(index + 1))
     var text = rest.joined(separator: " ")
