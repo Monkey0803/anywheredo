@@ -38,7 +38,7 @@ public struct Analyzer {
             return ClipboardAnalysis(
                 kind: .empty,
                 text: "",
-                headline: "剪贴板里没有文本内容",
+                headline: L10n.t("headline.emptyClipboard"),
                 facts: [],
                 suggestions: [],
                 charCount: charCount,
@@ -233,99 +233,99 @@ public struct Analyzer {
 
         case .url:
             if let url = detectURL(text) {
-                items.append(Suggestion(id: "open", title: "在浏览器打开", subtitle: url.host, symbol: "safari", action: .openURL(url)))
+                items.append(Suggestion(id: "open", title: L10n.t("suggest.url.open"), subtitle: url.host, symbol: "safari", action: .openURL(url)))
                 let label = markdownLabel(for: url)
-                items.append(Suggestion(id: "md", title: "复制为 Markdown 链接", subtitle: "[\(label)](\(url.absoluteString))", symbol: "text.badge.plus", action: .copyText("[\(label)](\(url.absoluteString))")))
+                items.append(Suggestion(id: "md", title: L10n.t("suggest.url.markdown"), subtitle: "[\(label)](\(url.absoluteString))", symbol: "text.badge.plus", action: .copyText("[\(label)](\(url.absoluteString))")))
                 if let host = url.host {
-                    items.append(Suggestion(id: "site", title: "只复制域名", subtitle: host, symbol: "doc.on.doc", action: .copyText(host)))
+                    items.append(Suggestion(id: "site", title: L10n.t("suggest.url.hostOnly"), subtitle: host, symbol: "doc.on.doc", action: .copyText(host)))
                 }
-                items.append(Suggestion(id: "search", title: "用 Google 搜索这个链接", symbol: "magnifyingglass", action: .searchWeb(url.absoluteString)))
+                items.append(Suggestion(id: "search", title: L10n.t("suggest.url.search"), symbol: "magnifyingglass", action: .searchWeb(url.absoluteString)))
             }
 
         case .filePath:
             if let path = detectFilePath(text, fileExists: context.fileExists) {
                 let name = (path as NSString).lastPathComponent
                 if context.fileExists(path) {
-                    items.append(Suggestion(id: "reveal", title: "在 Finder 中显示", subtitle: name, symbol: "folder", action: .revealInFinder(path)))
-                    items.append(Suggestion(id: "open", title: "用默认应用打开", subtitle: name, symbol: "arrow.up.forward.app", action: .openFile(path)))
+                    items.append(Suggestion(id: "reveal", title: L10n.t("suggest.path.reveal"), subtitle: name, symbol: "folder", action: .revealInFinder(path)))
+                    items.append(Suggestion(id: "open", title: L10n.t("suggest.path.open"), subtitle: name, symbol: "arrow.up.forward.app", action: .openFile(path)))
                 } else {
-                    items.append(Suggestion(id: "copy", title: "复制绝对路径", subtitle: path, symbol: "doc.on.doc", action: .copyText(path)))
+                    items.append(Suggestion(id: "copy", title: L10n.t("suggest.path.copyAbsolute"), subtitle: path, symbol: "doc.on.doc", action: .copyText(path)))
                 }
-                items.append(Suggestion(id: "parent", title: "复制所在文件夹", subtitle: (path as NSString).deletingLastPathComponent, symbol: "folder.badge.plus", action: .copyText((path as NSString).deletingLastPathComponent)))
-                items.append(Suggestion(id: "terminal", title: "复制 cd 命令", subtitle: "cd \(quotedShell(path))", symbol: "terminal", action: .copyText("cd \(quotedShell(path))")))
+                items.append(Suggestion(id: "parent", title: L10n.t("suggest.path.copyFolder"), subtitle: (path as NSString).deletingLastPathComponent, symbol: "folder.badge.plus", action: .copyText((path as NSString).deletingLastPathComponent)))
+                items.append(Suggestion(id: "terminal", title: L10n.t("suggest.path.copyCD"), subtitle: "cd \(quotedShell(path))", symbol: "terminal", action: .copyText("cd \(quotedShell(path))")))
             }
 
         case .json:
-            items.append(Suggestion(id: "pretty", title: "格式化 JSON", subtitle: "缩进后在新窗口预览", symbol: "text.alignleft", action: .transform(.jsonPretty, source: text)))
-            items.append(Suggestion(id: "minify", title: "压缩成一行", symbol: "arrow.down.right.and.arrow.up.left", action: .transform(.jsonMinify, source: text)))
-            items.append(Suggestion(id: "copy", title: "复制原文", symbol: "doc.on.doc", action: .copyText(text)))
+            items.append(Suggestion(id: "pretty", title: TextTransform.jsonPretty.title, subtitle: L10n.t("suggest.json.prettySubtitle"), symbol: "text.alignleft", action: .transform(.jsonPretty, source: text)))
+            items.append(Suggestion(id: "minify", title: TextTransform.jsonMinify.title, symbol: "arrow.down.right.and.arrow.up.left", action: .transform(.jsonMinify, source: text)))
+            items.append(Suggestion(id: "copy", title: L10n.t("suggest.common.copyOriginal"), symbol: "doc.on.doc", action: .copyText(text)))
 
         case .color:
             if let color = ColorTools.parse(text) {
-                items.append(Suggestion(id: "hex", title: "复制 HEX", subtitle: color.hex, symbol: "number", action: .copyText(color.hex)))
-                items.append(Suggestion(id: "rgb", title: "复制 rgb()", subtitle: color.rgbString, symbol: "circle.grid.cross", action: .copyText(color.rgbString)))
-                items.append(Suggestion(id: "swift", title: "复制 SwiftUI Color", subtitle: color.swiftLiteral, symbol: "swift", action: .copyText(color.swiftLiteral)))
-                items.append(Suggestion(id: "hsb", title: "复制 HSB", subtitle: color.hsbString, symbol: "paintbrush", action: .copyText(color.hsbString)))
+                items.append(Suggestion(id: "hex", title: L10n.t("suggest.color.copyHex"), subtitle: color.hex, symbol: "number", action: .copyText(color.hex)))
+                items.append(Suggestion(id: "rgb", title: L10n.t("suggest.color.copyRGB"), subtitle: color.rgbString, symbol: "circle.grid.cross", action: .copyText(color.rgbString)))
+                items.append(Suggestion(id: "swift", title: L10n.t("suggest.color.copySwift"), subtitle: color.swiftLiteral, symbol: "swift", action: .copyText(color.swiftLiteral)))
+                items.append(Suggestion(id: "hsb", title: L10n.t("suggest.color.copyHSB"), subtitle: color.hsbString, symbol: "paintbrush", action: .copyText(color.hsbString)))
             }
 
         case .timestamp:
             if let interpreted = TimeTools.interpret(text) {
                 let date = interpreted.date
-                items.append(Suggestion(id: "copyLocal", title: "复制本地时间", subtitle: TimeTools.localString(date), symbol: "calendar", action: .copyText(TimeTools.localString(date))))
-                items.append(Suggestion(id: "copyISO", title: "复制 ISO 8601", subtitle: TimeTools.isoString(date), symbol: "clock.arrow.circlepath", action: .copyText(TimeTools.isoString(date))))
-                items.append(Suggestion(id: "copySeconds", title: "复制 Unix 秒", subtitle: TimeTools.unixSeconds(date), symbol: "timer", action: .copyText(TimeTools.unixSeconds(date))))
-                items.append(Suggestion(id: "copyMillis", title: "复制 Unix 毫秒", subtitle: TimeTools.unixMillis(date), symbol: "timer.square", action: .copyText(TimeTools.unixMillis(date))))
-                items.append(Suggestion(id: "calendar", title: "创建日历事件", subtitle: "在日历中新建这天的事件", symbol: "calendar.badge.plus", action: .openURL(calendarURL(date))))
+                items.append(Suggestion(id: "copyLocal", title: L10n.t("suggest.time.copyLocal"), subtitle: TimeTools.localString(date), symbol: "calendar", action: .copyText(TimeTools.localString(date))))
+                items.append(Suggestion(id: "copyISO", title: L10n.t("suggest.time.copyISO"), subtitle: TimeTools.isoString(date), symbol: "clock.arrow.circlepath", action: .copyText(TimeTools.isoString(date))))
+                items.append(Suggestion(id: "copySeconds", title: L10n.t("suggest.time.copySeconds"), subtitle: TimeTools.unixSeconds(date), symbol: "timer", action: .copyText(TimeTools.unixSeconds(date))))
+                items.append(Suggestion(id: "copyMillis", title: L10n.t("suggest.time.copyMillis"), subtitle: TimeTools.unixMillis(date), symbol: "timer.square", action: .copyText(TimeTools.unixMillis(date))))
+                items.append(Suggestion(id: "calendar", title: L10n.t("suggest.time.createEvent"), subtitle: L10n.t("suggest.time.createEventSubtitle"), symbol: "calendar.badge.plus", action: .openURL(calendarURL(date))))
             }
 
         case .email:
             let address = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            items.append(Suggestion(id: "mail", title: "写邮件", subtitle: "mailto:\(address)", symbol: "envelope", action: .composeEmail(address)))
-            items.append(Suggestion(id: "copy", title: "复制邮箱地址", symbol: "doc.on.doc", action: .copyText(address)))
-            items.append(Suggestion(id: "domain", title: "提取域名", subtitle: address.split(separator: "@").last.map(String.init) ?? "", symbol: "globe", action: .copyText(address.split(separator: "@").last.map(String.init) ?? address)))
+            items.append(Suggestion(id: "mail", title: L10n.t("suggest.email.compose"), subtitle: "mailto:\(address)", symbol: "envelope", action: .composeEmail(address)))
+            items.append(Suggestion(id: "copy", title: L10n.t("suggest.email.copy"), symbol: "doc.on.doc", action: .copyText(address)))
+            items.append(Suggestion(id: "domain", title: L10n.t("suggest.email.domain"), subtitle: address.split(separator: "@").last.map(String.init) ?? "", symbol: "globe", action: .copyText(address.split(separator: "@").last.map(String.init) ?? address)))
 
         case .phoneNumber:
             let number = text.trimmingCharacters(in: .whitespacesAndNewlines)
             let digits = number.filter { $0.isNumber || $0 == "+" }
-            items.append(Suggestion(id: "sms", title: "发信息", subtitle: number, symbol: "message", action: .sendMessage(digits)))
-            items.append(Suggestion(id: "call", title: "用 FaceTime 拨打", subtitle: number, symbol: "phone", action: .callNumber(digits)))
-            items.append(Suggestion(id: "copy", title: "只复制数字", subtitle: digits, symbol: "doc.on.doc", action: .copyText(digits)))
+            items.append(Suggestion(id: "sms", title: L10n.t("suggest.phone.message"), subtitle: number, symbol: "message", action: .sendMessage(digits)))
+            items.append(Suggestion(id: "call", title: L10n.t("suggest.phone.facetime"), subtitle: number, symbol: "phone", action: .callNumber(digits)))
+            items.append(Suggestion(id: "copy", title: L10n.t("suggest.phone.copyDigits"), subtitle: digits, symbol: "doc.on.doc", action: .copyText(digits)))
 
         case .mathExpression:
             if let value = MathEval.evaluate(text) {
                 let formatted = MathEval.format(value)
-                items.append(Suggestion(id: "copyResult", title: "复制计算结果", subtitle: formatted, symbol: "equal.circle", action: .copyText(formatted)))
+                items.append(Suggestion(id: "copyResult", title: L10n.t("suggest.math.copyResult"), subtitle: formatted, symbol: "equal.circle", action: .copyText(formatted)))
             }
-            items.append(Suggestion(id: "copy", title: "复制原算式", symbol: "doc.on.doc", action: .copyText(text)))
+            items.append(Suggestion(id: "copy", title: L10n.t("suggest.math.copyExpression"), symbol: "doc.on.doc", action: .copyText(text)))
 
         case .base64:
             if let decoded = Base64Tools.decode(text) {
-                items.append(Suggestion(id: "decode", title: "查看解码结果", subtitle: previewLine(decoded), symbol: "lock.open", action: .transform(.base64Decode, source: text)))
+                items.append(Suggestion(id: "decode", title: L10n.t("suggest.base64.decode"), subtitle: previewLine(decoded), symbol: "lock.open", action: .transform(.base64Decode, source: text)))
             }
-            items.append(Suggestion(id: "copy", title: "复制原文", symbol: "doc.on.doc", action: .copyText(text)))
+            items.append(Suggestion(id: "copy", title: L10n.t("suggest.common.copyOriginal"), symbol: "doc.on.doc", action: .copyText(text)))
 
         case .code:
             let isTrace = looksLikeStackTrace(text)
             if isTrace {
-                items.append(Suggestion(id: "searchError", title: "搜索这条报错", subtitle: previewLine(firstErrorLine(text)), symbol: "magnifyingglass", action: .searchWeb(firstErrorLine(text))))
+                items.append(Suggestion(id: "searchError", title: L10n.t("suggest.code.searchError"), subtitle: previewLine(firstErrorLine(text)), symbol: "magnifyingglass", action: .searchWeb(firstErrorLine(text))))
             }
-            items.append(Suggestion(id: "copy", title: "复制代码", subtitle: "\(context.text.components(separatedBy: .newlines).count) 行", symbol: "doc.on.doc", action: .copyText(text)))
-            items.append(Suggestion(id: "trim", title: "去除首尾空白", symbol: "text.alignleft", action: .transform(.trimWhitespace, source: text)))
-            items.append(Suggestion(id: "collapse", title: "合并多余空行", symbol: "arrow.up.and.down.text.horizontal", action: .transform(.collapseBlankLines, source: text)))
+            items.append(Suggestion(id: "copy", title: L10n.t("suggest.code.copy"), subtitle: L10n.t("suggest.code.copySubtitle", context.text.components(separatedBy: .newlines).count), symbol: "doc.on.doc", action: .copyText(text)))
+            items.append(Suggestion(id: "trim", title: TextTransform.trimWhitespace.title, symbol: "text.alignleft", action: .transform(.trimWhitespace, source: text)))
+            items.append(Suggestion(id: "collapse", title: TextTransform.collapseBlankLines.title, symbol: "arrow.up.and.down.text.horizontal", action: .transform(.collapseBlankLines, source: text)))
             if let language = guessLanguage(text) {
-                items.append(Suggestion(id: "searchLang", title: "搜索 \(language) 相关写法", subtitle: previewLine(firstCodeLine(text)), symbol: "magnifyingglass", action: .searchWeb(firstCodeLine(text))))
+                items.append(Suggestion(id: "searchLang", title: L10n.t("suggest.code.searchLanguage", language), subtitle: previewLine(firstCodeLine(text)), symbol: "magnifyingglass", action: .searchWeb(firstCodeLine(text))))
             }
 
         case .plainText:
             if let url = firstURL(in: text) {
-                items.append(Suggestion(id: "openFirst", title: "打开文中的链接", subtitle: url.absoluteString, symbol: "link", action: .openURL(url)))
+                items.append(Suggestion(id: "openFirst", title: L10n.t("suggest.text.openLink"), subtitle: url.absoluteString, symbol: "link", action: .openURL(url)))
             }
             let query = previewLine(text, limit: 100)
-            items.append(Suggestion(id: "search", title: "用 Google 搜索", subtitle: query, symbol: "magnifyingglass", action: .searchWeb(query)))
+            items.append(Suggestion(id: "search", title: L10n.t("suggest.text.search"), subtitle: query, symbol: "magnifyingglass", action: .searchWeb(query)))
             let target = isMostlyChinese(text) ? "en" : "zh-CN"
-            items.append(Suggestion(id: "translate", title: target == "en" ? "用 Google 翻译成英文" : "用 Google 翻译成中文", subtitle: "在浏览器中打开翻译页", symbol: "character.book.closed", action: .openURL(translateURL(text, target: target))))
-            items.append(Suggestion(id: "copy", title: "复制为纯文本", subtitle: "去除首尾空白", symbol: "doc.on.doc", action: .copyText(text)))
-            items.append(Suggestion(id: "collapse", title: "合并多余空行", symbol: "arrow.up.and.down.text.horizontal", action: .transform(.collapseBlankLines, source: text)))
+            items.append(Suggestion(id: "translate", title: target == "en" ? L10n.t("suggest.text.translateToEnglish") : L10n.t("suggest.text.translateToChinese"), subtitle: L10n.t("suggest.text.translateSubtitle"), symbol: "character.book.closed", action: .openURL(translateURL(text, target: target))))
+            items.append(Suggestion(id: "copy", title: L10n.t("suggest.text.copyPlain"), subtitle: TextTransform.trimWhitespace.title, symbol: "doc.on.doc", action: .copyText(text)))
+            items.append(Suggestion(id: "collapse", title: TextTransform.collapseBlankLines.title, symbol: "arrow.up.and.down.text.horizontal", action: .transform(.collapseBlankLines, source: text)))
         }
 
         if context.aiEnabled {
@@ -354,7 +354,7 @@ public struct Analyzer {
             presets = [.summarize]
         }
         return presets.map { preset in
-            Suggestion(id: "ai.\(preset.rawValue)", title: preset.title, subtitle: "使用已配置的模型", symbol: preset.symbol, action: .ai(preset, source: text))
+            Suggestion(id: "ai.\(preset.rawValue)", title: preset.title, subtitle: L10n.t("suggest.ai.subtitle"), symbol: preset.symbol, action: .ai(preset, source: text))
         }
     }
 
@@ -365,9 +365,9 @@ public struct Analyzer {
         switch context.kind {
         case .json:
             if let description = JSONTools.describe(text) {
-                facts.append(Fact(label: "结构", value: description))
+                facts.append(Fact(label: L10n.t("fact.jsonShape"), value: description))
             }
-            facts.append(Fact(label: "大小", value: "\(text.count) 字符"))
+            facts.append(Fact(label: L10n.t("fact.size"), value: L10n.t("common.charCount", text.count)))
         case .color:
             if let color = ColorTools.parse(text) {
                 facts.append(Fact(label: "HEX", value: color.hex, monospaced: true))
@@ -376,44 +376,44 @@ public struct Analyzer {
             }
         case .timestamp:
             if let interpreted = TimeTools.interpret(text) {
-                facts.append(Fact(label: "识别为", value: interpreted.source))
-                facts.append(Fact(label: "本地", value: TimeTools.localString(interpreted.date), monospaced: true))
+                facts.append(Fact(label: L10n.t("fact.recognizedAs"), value: interpreted.source))
+                facts.append(Fact(label: L10n.t("fact.localTime"), value: TimeTools.localString(interpreted.date), monospaced: true))
                 facts.append(Fact(label: "UTC", value: utcString(interpreted.date), monospaced: true))
             }
         case .mathExpression:
             if let value = MathEval.evaluate(text) {
-                facts.append(Fact(label: "结果", value: MathEval.format(value), monospaced: true))
+                facts.append(Fact(label: L10n.t("fact.result"), value: MathEval.format(value), monospaced: true))
             }
         case .base64:
             if let decoded = Base64Tools.decode(text) {
-                facts.append(Fact(label: "解码预览", value: previewLine(decoded, limit: 80)))
+                facts.append(Fact(label: L10n.t("fact.decodedPreview"), value: previewLine(decoded, limit: 80)))
             }
         case .code:
             if context.lineCount > 1 {
-                facts.append(Fact(label: "行数", value: context.lineCountIsEstimated ? "约 \(context.lineCount)" : "\(context.lineCount)"))
+                facts.append(Fact(label: L10n.t("fact.lineCount"), value: context.lineCountIsEstimated ? L10n.t("common.approxNumber", context.lineCount) : "\(context.lineCount)"))
             }
             if let language = guessLanguage(text) {
-                facts.append(Fact(label: "语言", value: language))
+                facts.append(Fact(label: L10n.t("fact.language"), value: language))
             }
             if looksLikeStackTrace(text) {
-                facts.append(Fact(label: "类型", value: "疑似报错 / 堆栈"))
+                facts.append(Fact(label: L10n.t("fact.type"), value: L10n.t("headline.stackTrace")))
             }
         case .url:
             if let url = detectURL(text) {
-                if let scheme = url.scheme { facts.append(Fact(label: "协议", value: scheme)) }
-                if let host = url.host { facts.append(Fact(label: "域名", value: host)) }
+                if let scheme = url.scheme { facts.append(Fact(label: L10n.t("fact.scheme"), value: scheme)) }
+                if let host = url.host { facts.append(Fact(label: L10n.t("fact.host"), value: host)) }
             }
         case .filePath:
             if let path = detectFilePath(text, fileExists: context.fileExists) {
                 if context.fileExists(path), let attributes = try? FileManager.default.attributesOfItem(atPath: path) {
                     if let size = attributes[.size] as? NSNumber {
-                        facts.append(Fact(label: "大小", value: ByteCountFormatter.string(fromByteCount: size.int64Value, countStyle: .file)))
+                        facts.append(Fact(label: L10n.t("fact.size"), value: ByteCountFormatter.string(fromByteCount: size.int64Value, countStyle: .file)))
                     }
                     if let modified = attributes[.modificationDate] as? Date {
-                        facts.append(Fact(label: "修改时间", value: TimeTools.localString(modified)))
+                        facts.append(Fact(label: L10n.t("fact.modified"), value: TimeTools.localString(modified)))
                     }
                 }
-                facts.append(Fact(label: "路径", value: path, monospaced: true))
+                facts.append(Fact(label: L10n.t("fact.path"), value: path, monospaced: true))
             }
         case .email, .phoneNumber, .empty, .plainText:
             break
@@ -421,37 +421,40 @@ public struct Analyzer {
 
         if [.plainText, .code, .email, .phoneNumber, .base64].contains(context.kind) {
             // 没有换行符时不谎报「1 行」——要么给出估算，要么只说字符数。
-            var value = "\(text.count) 字符"
+            var value = L10n.t("common.charCount", text.count)
             if context.lineCount > 1 {
-                value += context.lineCountIsEstimated ? " · 约 \(context.lineCount) 行" : " · \(context.lineCount) 行"
+                value += context.lineCountIsEstimated ? L10n.t("common.linesApproxSuffix", context.lineCount) : L10n.t("common.linesSuffix", context.lineCount)
             }
-            facts.append(Fact(label: "字数", value: value))
+            facts.append(Fact(label: L10n.t("fact.wordCount"), value: value))
         }
         return facts
     }
 
     func buildHeadline(_ context: Context, charCount: Int, lineCount: Int, estimated: Bool = false) -> String {
         switch context.kind {
-        case .empty: return "没有可分析的文本"
-        case .url: return detectURL(context.text)?.host ?? "链接"
+        case .empty: return L10n.t("headline.nothingToAnalyze")
+        case .url: return detectURL(context.text)?.host ?? L10n.t("headline.url")
         case .filePath:
             return detectFilePath(context.text, fileExists: context.fileExists)
-                .map { ($0 as NSString).lastPathComponent } ?? "文件路径"
+                .map { ($0 as NSString).lastPathComponent } ?? L10n.t("headline.filePath")
         case .json: return JSONTools.describe(context.text) ?? "JSON"
-        case .color: return ColorTools.parse(context.text)?.hex ?? "颜色"
-        case .timestamp: return TimeTools.interpret(context.text).map { TimeTools.localString($0.date) } ?? "时间"
-        case .email: return "邮件地址"
-        case .phoneNumber: return "电话号码"
+        case .color: return ColorTools.parse(context.text)?.hex ?? L10n.t("headline.color")
+        case .timestamp: return TimeTools.interpret(context.text).map { TimeTools.localString($0.date) } ?? L10n.t("headline.timestamp")
+        case .email: return L10n.t("headline.email")
+        case .phoneNumber: return L10n.t("headline.phone")
         case .mathExpression:
             if let value = MathEval.evaluate(context.text) { return "= \(MathEval.format(value))" }
-            return "算式"
-        case .base64: return "Base64 编码内容"
+            return L10n.t("headline.math")
+        case .base64: return L10n.t("headline.base64")
         case .code:
-            if looksLikeStackTrace(context.text) { return "疑似报错 / 堆栈" }
-            guard lineCount > 1 else { return "代码片段" }
-            return estimated ? "约 \(lineCount) 行代码" : "\(lineCount) 行代码"
+            if looksLikeStackTrace(context.text) { return L10n.t("headline.stackTrace") }
+            guard lineCount > 1 else { return L10n.t("headline.codeSnippet") }
+            return estimated ? L10n.t("headline.codeLinesApprox", lineCount) : L10n.t("headline.codeLines", lineCount)
         case .plainText:
-            return lineCount > 1 ? "\(charCount) 字符 · \(estimated ? "约 " : "")\(lineCount) 行" : "\(charCount) 字符"
+            return lineCount > 1
+                ? (estimated ? L10n.t("common.charCountLinesApprox", charCount, lineCount)
+                            : L10n.t("common.charCountLines", charCount, lineCount))
+                : L10n.t("common.charCount", charCount)
         }
     }
 
