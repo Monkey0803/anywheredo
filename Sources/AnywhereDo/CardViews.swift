@@ -471,3 +471,76 @@ final class LoadingCardView: CardView {
 
     required init?(coder: NSCoder) { fatalError() }
 }
+
+// MARK: - 悬停小图标
+
+/// 划词后先出现的「小图标」：只有 26pt，鼠标悬停或点击才展开成完整卡片。
+///
+/// 继承 `CardView` 是为了复用同一套毛玻璃背景与弹窗管线（`PopupController` 只接受 `CardView`），
+/// 因此它也能享受 Esc 关闭、点别处关闭这些既有行为。
+final class HoverIconView: CardView {
+    static let side: CGFloat = 26
+
+    /// 悬停或点击时调用，由 AppDelegate 换成完整卡片。
+    var onExpand: (() -> Void)?
+
+    private let iconView = NSImageView()
+    private var trackingArea: NSTrackingArea?
+
+    init(symbol: String) {
+        super.init()
+
+        // 不要 CardView 那套纵向内容栈，换成居中的图标。
+        stack.removeFromSuperview()
+        // CardView 把宽度固定成 380pt，这里必须解掉，否则小图标会被撑成一条 380x26 的长条。
+        for constraint in constraints
+        where constraint.firstAttribute == .width && constraint.constant == Self.width {
+            constraint.isActive = false
+        }
+        frame = NSRect(x: 0, y: 0, width: Self.side, height: Self.side)
+        NSLayoutConstraint.activate([
+            widthAnchor.constraint(equalToConstant: Self.side),
+            heightAnchor.constraint(equalToConstant: Self.side),
+        ])
+        layer?.cornerRadius = Self.side / 2
+
+        if let base = NSImage(systemSymbolName: symbol, accessibilityDescription: nil) {
+            iconView.image = base.withSymbolConfiguration(
+                NSImage.SymbolConfiguration(pointSize: 13, weight: .semibold)
+            ) ?? base
+        }
+        iconView.contentTintColor = .controlAccentColor
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(iconView)
+        NSLayoutConstraint.activate([
+            iconView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            iconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+        toolTip = L10n.t("hover.tooltip")
+    }
+
+    required init?(coder: NSCoder) { fatalError(L10n.t("card.nibUnsupported")) }
+
+    override var fittingSize: NSSize { NSSize(width: Self.side, height: Self.side) }
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        if let trackingArea { removeTrackingArea(trackingArea) }
+        let area = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(area)
+        trackingArea = area
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        onExpand?()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        onExpand?()
+    }
+}

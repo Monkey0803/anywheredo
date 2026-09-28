@@ -173,7 +173,7 @@
 "card.copyResult" = "复制结果";
 "card.back" = "返回";
 "card.escHint" = "Esc 关闭";
-"cli.help" = "AnywhereDo —— macOS 划词即弹与复制即建议\n\n  AnywhereDo                        启动菜单栏应用\n  AnywhereDo --analyze \"文本\"       只做一次分析并打印结果（调试用）\n  AnywhereDo --analyze -            从 stdin 读取内容再分析\n  AnywhereDo --check-update         检查 GitHub 上是否有新版本\n  AnywhereDo --strings              打印多语言解析结果（调试用）\n  AnywhereDo --accessibility        打印辅助功能授权状态\n  AnywhereDo --selection            打印当前聚焦 App 里选中的文字（验证划词）\n  AnywhereDo --copy-probe           在终端里验证「合成 ⌘C + 还原剪贴板」兜底\n  AnywhereDo --version              打印版本\n  AnywhereDo --settings             启动并直接打开设置窗口";
+"cli.help" = "AnywhereDo —— macOS 划词即弹与复制即建议\n\n  AnywhereDo                        启动菜单栏应用\n  AnywhereDo --analyze \"文本\"       只做一次分析并打印结果（调试用）\n  AnywhereDo --analyze -            从 stdin 读取内容再分析\n  AnywhereDo --check-update         检查 GitHub 上是否有新版本\n  AnywhereDo --strings              打印多语言解析结果（调试用）\n  AnywhereDo --render-hover [路径]  渲染悬停小图标为 PNG（调试用）\n  AnywhereDo --hover-demo           验证悬停展开链路（会移动鼠标指针）\n  AnywhereDo --accessibility        打印辅助功能授权状态\n  AnywhereDo --selection            打印当前聚焦 App 里选中的文字（验证划词）\n  AnywhereDo --copy-probe           在终端里验证「合成 ⌘C + 还原剪贴板」兜底\n  AnywhereDo --version              打印版本\n  AnywhereDo --settings             启动并直接打开设置窗口";
 "cli.kind" = "类型     : %@（%@）";
 "cli.headline" = "摘要     : %@";
 "cli.size" = "规模     : %d 字符 / %d 行%@";
@@ -301,3 +301,5 @@
 "settings.ignoredAppsPlaceholder" = "也可手动输入 bundle id，逗号分隔";
 "settings.ignoredAppsRemove" = "移除";
 "settings.modifierInstant" = "按住 ⌘/⌥ 划词时直接执行第一条建议（不弹卡片，也不会调用 AI）";
+"settings.hoverIcon" = "划词后先显示小图标，悬停或点击才展开卡片（打扰最小）";
+"hover.tooltip" = "悬停展开建议";

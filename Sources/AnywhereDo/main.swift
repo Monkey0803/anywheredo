@@ -54,6 +54,137 @@ if arguments.contains("--strings") {
     exit(0)
 }
 
+if let index = arguments.firstIndex(of: "--render-hover") {
+    // 把悬停小图标渲染成 PNG，用来肉眼确认外观（不需要辅助功能权限）。
+    let app = NSApplication.shared
+    app.setActivationPolicy(.accessory)
+    let scale: CGFloat = 6
+    let canvas = NSSize(width: 60, height: 40)
+    let container = NSView(frame: NSRect(origin: .zero, size: canvas))
+    container.wantsLayer = true
+    container.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+    let icon = HoverIconView(symbol: "sparkles")
+    icon.frame = NSRect(
+        x: (canvas.width - HoverIconView.side) / 2,
+        y: (canvas.height - HoverIconView.side) / 2,
+        width: HoverIconView.side,
+        height: HoverIconView.side
+    )
+    container.addSubview(icon)
+    container.layoutSubtreeIfNeeded()
+
+    guard let rep = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: Int(canvas.width * scale),
+        pixelsHigh: Int(canvas.height * scale),
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ) else { print("无法创建位图"); exit(4) }
+    rep.size = canvas
+    container.cacheDisplay(in: container.bounds, to: rep)
+    guard let data = rep.representation(using: .png, properties: [:]) else { print("PNG 编码失败"); exit(4) }
+    let path = index + 1 < arguments.count ? arguments[index + 1] : "/tmp/anywheredo-hover.png"
+    do {
+        try data.write(to: URL(fileURLWithPath: path))
+    } catch {
+        print("写文件失败：\(error.localizedDescription)")
+        exit(4)
+    }
+    print("已渲染小图标：\(path)（\(Int(canvas.width * scale))x\(Int(canvas.height * scale)) 像素，图标 \(Int(HoverIconView.side))pt）")
+    exit(0)
+}
+
+if arguments.contains("--hover-demo") {
+    // 验证「悬停展开」这条链路：先直接调回调（验证接线），再合成鼠标移动（验证系统投递）。
+    let app = NSApplication.shared
+    app.setActivationPolicy(.accessory)
+    app.finishLaunching()
+
+    let popup = PopupController()
+    var expandCount = 0
+    let icon = HoverIconView(symbol: "sparkles")
+    icon.onExpand = { expandCount += 1 }
+
+    let mouse = NSEvent.mouseLocation
+    popup.showCard(icon, anchor: .point(NSPoint(x: mouse.x + 60, y: mouse.y)), dismissAfter: nil)
+    guard let frame = icon.window?.frame, icon.window?.isVisible == true else {
+        print("小图标面板没有显示出来")
+        exit(3)
+    }
+    print("小图标面板：\(Int(frame.width))x\(Int(frame.height))，位置=(\(Int(frame.origin.x)),\(Int(frame.origin.y)))")
+    let areas = icon.trackingAreas
+    print("追踪区域：\(areas.count) 个" + (areas.first.map { "，范围=\(Int($0.rect.width))x\(Int($0.rect.height))" } ?? ""))
+
+    if let enter = NSEvent.enterExitEvent(
+        with: .mouseEntered,
+        location: NSPoint(x: frame.midX, y: frame.midY),
+        modifierFlags: [],
+        timestamp: Date().timeIntervalSince1970,
+        windowNumber: icon.window?.windowNumber ?? 0,
+        context: nil,
+        eventNumber: 0,
+        trackingNumber: 0,
+        userData: nil
+    ) {
+        icon.mouseEntered(with: enter)
+    }
+    let wired = expandCount > 0
+    print(wired ? "✅ 回调接线正确（mouseEntered → onExpand）" : "❌ 回调没有接到 onExpand")
+    expandCount = 0
+
+    // 合成一次「扫入」：从图标外侧一路移动到图标中心，比单次跳跃更容易触发进入事件。
+    var delivered: Bool? = nil
+    if let screen = NSScreen.screens.first {
+        let before = NSEvent.mouseLocation
+        let outside = NSPoint(x: frame.midX + 80, y: frame.midY)
+        func post(_ cocoa: NSPoint) {
+            let quartz = CGPoint(x: cocoa.x, y: screen.frame.height - cocoa.y)
+            CGEvent(mouseEventSource: nil, mouseType: .mouseMoved, mouseCursorPosition: quartz, mouseButton: .left)?
+                .post(tap: .cghidEventTap)
+        }
+        post(outside)
+        // 合成 .mouseMoved 未必真的移动指针，先用 warp 把它强制挪到图标外侧。
+        CGWarpMouseCursorPosition(CGPoint(x: outside.x, y: screen.frame.height - outside.y))
+        CGAssociateMouseAndMouseCursorPosition(1)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        let steps = 12
+        for step in 1...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            post(NSPoint(x: outside.x + (frame.midX - outside.x) * t,
+                         y: outside.y + (frame.midY - outside.y) * t))
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+        // 再补一个 warp 直接落到中心，并配一个 move 事件让追踪机制看到「进入」。
+        CGWarpMouseCursorPosition(CGPoint(x: frame.midX, y: screen.frame.height - frame.midY))
+        post(NSPoint(x: frame.midX, y: frame.midY))
+        let deadline = Date().addingTimeInterval(2)
+        while expandCount == 0 && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+        let after = NSEvent.mouseLocation
+        print(String(format: "光标位置：前=(%.0f,%.0f) 后=(%.0f,%.0f) 图标中心=(%.0f,%.0f)",
+                     before.x, before.y, after.x, after.y, frame.midX, frame.midY))
+        delivered = expandCount > 0
+    }
+    if let delivered {
+        if delivered {
+            print("✅ 系统投递生效：合成鼠标扫入图标触发了 mouseEntered")
+        } else {
+            print("⚠️ 系统没有投递 mouseEntered。本进程也无法用合成事件移动光标（warp 与 mouseMoved 都无效），")
+            print("   所以「真实鼠标进入」这一段在终端里验不了 —— 请在应用里用鼠标悬停一次确认。")
+        }
+    } else {
+        print("⚠️ 没能构造合成鼠标事件")
+    }
+    popup.close()
+    exit(wired ? 0 : 2)
+}
+
 if arguments.contains("--check-update") {
     // 需要一个 run loop 来收 URLSession 回到主队列的回调，不能直接 wait 信号量。
     var finished = false

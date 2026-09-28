@@ -175,6 +175,8 @@ App 图标（`Resources/AppIcon.icns`）和菜单栏图标已经生成好了，�
    .build/release/AnywhereDo --selection
    .build/release/AnywhereDo --copy-probe   # 验证「合成 ⌘C + 还原剪贴板」
    .build/release/AnywhereDo --check-update # 检查 GitHub 上是否有新版本
+   .build/release/AnywhereDo --render-hover   # 把悬停小图标渲染成 PNG（调试用）
+   .build/release/AnywhereDo --hover-demo     # 验证「悬停展开」的接线（会尝试移动鼠标）
    ```
 
 4. **Chrome / 飞书 / VS Code 这类 App 读不到选区**是正常的（它们自绘文本）。
@@ -230,6 +232,7 @@ printf '%s' '{"a":1}' | .build/release/AnywhereDo --analyze -
 | `ignoreSensitive` | 忽略带 `org.nspasteboard.ConcealedType` 等标记的内容 |
 | `ignoredBundleIDs` | 来源 App 黑名单，默认含 1Password / Bitwarden / 钥匙串等 |
 | `selectionModifierInstant` | 按住 ⌘/⌥ 划词直接执行第一条建议（默认 `false`，不会调用 AI） |
+| `selectionHoverIcon` | 划词后先出 26pt 小图标，悬停或点击才展开卡片（默认 `false`） |
 | `ignoredBundleIDs` | 忽略的 App（bundle id 数组，设置里可从运行中的 App 挑选） |
 | `checkForUpdates` | 启动时检查新版本（默认 `true`） |
 | `lastUpdateCheck` | 上次检查时间，用于限流（自动写入） |

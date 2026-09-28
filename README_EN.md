@@ -188,6 +188,8 @@ In this order — it usually nails it in one pass:
    .build/release/AnywhereDo --selection
    .build/release/AnywhereDo --copy-probe   # verifies "synthesize ⌘C + restore clipboard"
    .build/release/AnywhereDo --check-update # ask GitHub whether a newer release exists
+   .build/release/AnywhereDo --render-hover   # render the hover icon as a PNG (debug)
+   .build/release/AnywhereDo --hover-demo     # verify the hover-to-expand wiring (tries to move the pointer)
    ```
 
 4. **Chrome / Lark / VS Code not exposing a selection is normal** (they draw text themselves).
@@ -250,6 +252,7 @@ Menu-bar icon → **Settings…**, or edit `~/Library/Application Support/Anywhe
 | `ignoreSensitive` | ignore content flagged with `org.nspasteboard.ConcealedType` etc. |
 | `ignoredBundleIDs` | source-app block list (1Password / Bitwarden / Keychain by default) |
 | `selectionModifierInstant` | hold ⌘/⌥ while selecting to run the first suggestion directly (default `false`, never calls AI) |
+| `selectionHoverIcon` | show a 26pt icon after selecting; hover or click to expand the card (default `false`) |
 | `ignoredBundleIDs` | ignored apps (array of bundle ids; pickable from running apps in the settings) |
 | `checkForUpdates` | check for a new release at launch (default `true`) |
 | `lastUpdateCheck` | timestamp of the last check, used for rate limiting (written automatically) |

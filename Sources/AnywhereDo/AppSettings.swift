@@ -29,6 +29,8 @@ struct AppSettings: Codable, Equatable {
     var selectionCopyFallback: Bool = false
     /// 按住 ⌘/⌥ 划词时直接执行第一条建议（不弹卡片，也不调用 AI）。
     var selectionModifierInstant: Bool = false
+    /// 划词后先显示一个小图标，悬停或点击才展开成完整卡片（打扰最小）。
+    var selectionHoverIcon: Bool = false
     /// 是否在弹窗里显示内容预览。
     var showPreview: Bool = true
     /// 是否让弹窗可以接受 Esc / 数字快捷键。
@@ -75,6 +77,7 @@ struct AppSettings: Codable, Equatable {
         selectionCompact = try container.decodeIfPresent(Bool.self, forKey: .selectionCompact) ?? defaults.selectionCompact
         selectionCopyFallback = try container.decodeIfPresent(Bool.self, forKey: .selectionCopyFallback) ?? defaults.selectionCopyFallback
         selectionModifierInstant = try container.decodeIfPresent(Bool.self, forKey: .selectionModifierInstant) ?? defaults.selectionModifierInstant
+        selectionHoverIcon = try container.decodeIfPresent(Bool.self, forKey: .selectionHoverIcon) ?? defaults.selectionHoverIcon
         showPreview = try container.decodeIfPresent(Bool.self, forKey: .showPreview) ?? defaults.showPreview
         keyboardShortcuts = try container.decodeIfPresent(Bool.self, forKey: .keyboardShortcuts) ?? defaults.keyboardShortcuts
         autoDismissSeconds = try container.decodeIfPresent(Double.self, forKey: .autoDismissSeconds) ?? defaults.autoDismissSeconds

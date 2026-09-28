@@ -334,6 +334,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func present(analysis: ClipboardAnalysis, sourceApp: String?, anchor: PopupAnchor, compact: Bool) {
+        // 悬停小图标模式：先出一个小图标，悬停或点击才展开成完整卡片。
+        if store.settings.selectionHoverIcon, case .selection = anchor {
+            let hint = HoverIconView(symbol: analysis.suggestions.first?.symbol ?? "sparkles")
+            hint.onExpand = { [weak self] in
+                guard let self else { return }
+                Diagnostics.log("划词：悬停/点击小图标，展开卡片")
+                self.present(analysis: analysis, sourceApp: sourceApp, anchor: anchor, compact: compact)
+            }
+            // 小图标停留久一点，给用户移过去的时间。
+            let delay = store.settings.autoDismissSeconds > 0
+                ? max(store.settings.autoDismissSeconds, 8)
+                : nil
+            popup.showCard(hint, anchor: anchor, dismissAfter: delay)
+            expandHintIfMouseAlreadyInside(hint)
+            return
+        }
+
         let card = SuggestionCardView(
             analysis: analysis,
             sourceApp: sourceApp,
@@ -349,6 +366,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         let delay = store.settings.autoDismissSeconds > 0 ? store.settings.autoDismissSeconds : nil
         popup.showCard(card, anchor: anchor, dismissAfter: delay)
+    }
+
+    /// 拖拽结束的位置常常就在选区旁边：如果鼠标已经压在小图标上，就自动展开
+    /// （NSTrackingArea 的 mouseEntered 只在「移入」时触发，鼠标本来就在里面时不会触发）。
+    private func expandHintIfMouseAlreadyInside(_ hint: HoverIconView) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak hint] in
+            guard let hint,
+                  let window = hint.window,
+                  window.isVisible,
+                  window.frame.insetBy(dx: -6, dy: -6).contains(NSEvent.mouseLocation) else { return }
+            Diagnostics.log("划词：鼠标已停在小图标上，直接展开")
+            hint.onExpand?()
+        }
     }
 
     // MARK: - 执行建议
