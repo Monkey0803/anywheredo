@@ -27,6 +27,14 @@ brew tap monkey0803/tap
 brew install --cask anywheredo
 ```
 
+If you get `Refusing to load cask … from untrusted tap` (Homebrew 7 and later require third-party
+taps to be trusted explicitly), run:
+
+```bash
+brew trust monkey0803/tap
+brew install --cask anywheredo
+```
+
 ### Manual download
 
 Grab `AnywhereDo-<version>-universal.zip` from

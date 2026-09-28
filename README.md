@@ -27,6 +27,13 @@ brew tap monkey0803/tap
 brew install --cask anywheredo
 ```
 
+若报 `Refusing to load cask … from untrusted tap`（Homebrew 7 起要求显式信任第三方 tap），先执行：
+
+```bash
+brew trust monkey0803/tap
+brew install --cask anywheredo
+```
+
 ### 手动下载
 
 从 [Releases](https://github.com/Monkey0803/anywheredo/releases) 下载
