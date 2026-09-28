@@ -28,11 +28,22 @@ if [ ! -x "$BIN" ]; then
   exit 1
 fi
 
-echo "==> 组装 $APP"
+# 版本号唯一来源：Sources/AnywhereDoCore/Version.swift 的 marketing 常量
+VERSION="$(grep -oE 'marketing *= *"[^"]+"' Sources/AnywhereDoCore/Version.swift | head -1 | sed -E 's/.*"([^"]+)"/\1/')"
+if [ -z "$VERSION" ]; then
+  echo "读不到版本号：请检查 Sources/AnywhereDoCore/Version.swift 里的 marketing 常量" >&2
+  exit 1
+fi
+
+echo "==> 组装 ${APP}（版本 ${VERSION}）"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/$APP_NAME"
-cp Resources/Info.plist "$APP/Contents/Info.plist"
+sed "s/__VERSION__/$VERSION/g" Resources/Info.plist > "$APP/Contents/Info.plist"
+if grep -q "__VERSION__" "$APP/Contents/Info.plist"; then
+  echo "Info.plist 里还有没替换的 __VERSION__ 占位符" >&2
+  exit 1
+fi
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
 # 图标资源（由 scripts/build_icons.sh 生成）

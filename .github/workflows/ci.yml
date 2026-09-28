@@ -44,6 +44,20 @@ jobs:
           lipo -info build/AnywhereDo.app/Contents/MacOS/AnywhereDo
           codesign -dv build/AnywhereDo.app 2>&1 | head -4
 
+      - name: 校验版本号只有一处来源
+        run: |
+          PLIST=$(plutil -extract CFBundleShortVersionString raw build/AnywhereDo.app/Contents/Info.plist)
+          SWIFT=$(grep -oE 'marketing *= *"[^"]+"' Sources/AnywhereDoCore/Version.swift | sed -E 's/.*"([^"]+)"/\1/')
+          BINARY=$(build/AnywhereDo.app/Contents/MacOS/AnywhereDo --version | awk '{print $2}')
+          echo "Info.plist=$PLIST  Version.swift=$SWIFT  二进制=$BINARY"
+          [ "$PLIST" = "$SWIFT" ] && [ "$BINARY" = "$SWIFT" ] || { echo "❌ 版本号不一致"; exit 1; }
+          echo "✅ 三处一致"
+
+      - name: 冒烟测试（CLI 模式）
+        run: |
+          build/AnywhereDo.app/Contents/MacOS/AnywhereDo --analyze "https://github.com/apple/swift" | head -4
+          printf '%s' '{"a":1}' | build/AnywhereDo.app/Contents/MacOS/AnywhereDo --analyze - | head -3
+
       - name: 上传 .app
         uses: actions/upload-artifact@v4
         with:

@@ -187,6 +187,7 @@ In this order — it usually nails it in one pass:
    .build/release/AnywhereDo --accessibility
    .build/release/AnywhereDo --selection
    .build/release/AnywhereDo --copy-probe   # verifies "synthesize ⌘C + restore clipboard"
+   .build/release/AnywhereDo --check-update # ask GitHub whether a newer release exists
    ```
 
 4. **Chrome / Lark / VS Code not exposing a selection is normal** (they draw text themselves).
@@ -248,6 +249,8 @@ Menu-bar icon → **Settings…**, or edit `~/Library/Application Support/Anywhe
 | `maxContentLength` | max characters kept for the card (default 3000, keeps huge copies from freezing the UI) |
 | `ignoreSensitive` | ignore content flagged with `org.nspasteboard.ConcealedType` etc. |
 | `ignoredBundleIDs` | source-app block list (1Password / Bitwarden / Keychain by default) |
+| `checkForUpdates` | check for a new release at launch (default `true`) |
+| `lastUpdateCheck` | timestamp of the last check, used for rate limiting (written automatically) |
 | `ai.*` | OpenAI-compatible endpoint: `baseURL` + `model` + `apiKey` (DeepSeek / OpenAI / Ollama) |
 
 With AI configured, extra sparkle entries appear (summarize / translate / polish / explain code /
@@ -270,7 +273,11 @@ with one click.
 - Content copied from apps on the block list (common password managers and Keychain) is skipped.
 - Clipboard writes we perform ourselves ("Copy as Markdown link", …) are acknowledged through
   `changeCount` so they never re-trigger the app.
-- The only network request is the AI suggestion you explicitly configure and click.
+- There are exactly two network requests, both switchable off:
+  - **Update check** (on by default): one GET to GitHub's releases API at launch, at most once every
+    6 hours, carrying no personal data. Turn it off in the settings, or trigger it manually from the
+    menu with "Check for updates…".
+  - **AI suggestions**: only after you configure an endpoint and click the action yourself.
 
 ## Permissions
 

@@ -174,6 +174,7 @@ App 图标（`Resources/AppIcon.icns`）和菜单栏图标已经生成好了，�
    .build/release/AnywhereDo --accessibility
    .build/release/AnywhereDo --selection
    .build/release/AnywhereDo --copy-probe   # 验证「合成 ⌘C + 还原剪贴板」
+   .build/release/AnywhereDo --check-update # 检查 GitHub 上是否有新版本
    ```
 
 4. **Chrome / 飞书 / VS Code 这类 App 读不到选区**是正常的（它们自绘文本）。
@@ -228,6 +229,8 @@ printf '%s' '{"a":1}' | .build/release/AnywhereDo --analyze -
 | `maxContentLength` | 面板里保留的最大字符数（默认 3000，防止复制大文件卡界面） |
 | `ignoreSensitive` | 忽略带 `org.nspasteboard.ConcealedType` 等标记的内容 |
 | `ignoredBundleIDs` | 来源 App 黑名单，默认含 1Password / Bitwarden / 钥匙串等 |
+| `checkForUpdates` | 启动时检查新版本（默认 `true`） |
+| `lastUpdateCheck` | 上次检查时间，用于限流（自动写入） |
 | `ai.*` | OpenAI 兼容接口：`baseURL` + `model` + `apiKey`（DeepSeek / OpenAI / Ollama 均可） |
 
 配置 AI 后，建议列表里会多出带 ✨ 的条目（总结 / 翻译 / 润色 / 解释代码 / 找 Bug / 分析报错 / 提取待办），
@@ -244,7 +247,10 @@ printf '%s' '{"a":1}' | .build/release/AnywhereDo --analyze -
 - 密码管理器打上「敏感 / 临时」标记的内容直接跳过。
 - 来源 App 黑名单里的应用（默认含常见密码管理器与钥匙串）复制的内容不处理。
 - 自己写剪贴板（「复制为 Markdown 链接」等）会被 `changeCount` 确认，不会自触发。
-- 唯一的网络请求是你主动配置并点击的 AI 建议。
+- 网络请求只有两个，都可以关：
+  - **检查更新**（默认开）：启动时向 GitHub 的 releases API 发一个 GET，最多 6 小时一次，不带任何个人信息；
+    设置里可以关掉，也可以用菜单里的「检查更新…」手动触发。
+  - **AI 建议**：只在你配置了接口并主动点击后才发请求。
 
 ## 权限说明
 

@@ -18,10 +18,11 @@
     <string>AnywhereDo</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+    <!-- 版本号由 scripts/build_app.sh 从 Sources/AnywhereDoCore/Version.swift 注入 -->
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>__VERSION__</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>__VERSION__</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <!-- 菜单栏应用：不显示 Dock 图标 -->

@@ -191,6 +191,30 @@ final class AnalyzerSuggestionTests: XCTestCase {
     }
 }
 
+final class VersionTests: XCTestCase {
+    func testDetectsNewerVersion() {
+        XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "v1.1.0", than: "1.0.0"))
+        XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "1.0.1", than: "1.0.0"))
+        XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "2.0", than: "1.9.9"))
+        XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "1.0.10", than: "1.0.9"))
+        XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "v1.1.0", than: "1.1.0-beta.1"))
+    }
+
+    func testDoesNotFlagSameOrOlder() {
+        XCTAssertFalse(AnywhereDoVersion.isNewer(remote: "1.0.0", than: "1.0.0"))
+        XCTAssertFalse(AnywhereDoVersion.isNewer(remote: "v1.0.0", than: "1.0.0"))
+        XCTAssertFalse(AnywhereDoVersion.isNewer(remote: "1.0.0", than: "1.1.0"))
+        XCTAssertFalse(AnywhereDoVersion.isNewer(remote: "1.1.0-beta.1", than: "1.1.0"))
+    }
+
+    func testHandlesGarbage() {
+        XCTAssertFalse(AnywhereDoVersion.isNewer(remote: "not-a-version", than: "1.0.0"))
+        XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "1.0.0", than: "not-a-version"))
+        XCTAssertEqual(AnywhereDoVersion.compare("v1.2.3", "1.2.3"), 0)
+        XCTAssertEqual(AnywhereDoVersion.compare("", ""), 0)
+    }
+}
+
 final class ToolTests: XCTestCase {
     func testMathEval() {
         XCTAssertEqual(MathEval.evaluate("12*8+4"), 100)

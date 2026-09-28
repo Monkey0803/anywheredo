@@ -45,6 +45,10 @@ struct AppSettings: Codable, Equatable {
     var launchAtLogin: Bool = false
     /// 是否已经就「划词需要辅助功能权限」提醒过用户（只提醒一次）。
     var didPromptForAccessibility: Bool = false
+    /// 启动时检查新版本（只发一个 GET 到 GitHub releases API，不含任何个人信息）。
+    var checkForUpdates: Bool = true
+    /// 上次检查更新的时间，用于限流。
+    var lastUpdateCheck: Date?
     var ai: AIConfig = AIConfig()
 
     static let defaultIgnoredBundleIDs: [String] = [
@@ -77,6 +81,8 @@ struct AppSettings: Codable, Equatable {
         popupOffset = try container.decodeIfPresent(Double.self, forKey: .popupOffset) ?? defaults.popupOffset
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? defaults.launchAtLogin
         didPromptForAccessibility = try container.decodeIfPresent(Bool.self, forKey: .didPromptForAccessibility) ?? defaults.didPromptForAccessibility
+        checkForUpdates = try container.decodeIfPresent(Bool.self, forKey: .checkForUpdates) ?? defaults.checkForUpdates
+        lastUpdateCheck = try container.decodeIfPresent(Date.self, forKey: .lastUpdateCheck)
         ai = try container.decodeIfPresent(AIConfig.self, forKey: .ai) ?? defaults.ai
     }
 }

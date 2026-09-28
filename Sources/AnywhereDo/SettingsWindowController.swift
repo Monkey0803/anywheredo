@@ -25,6 +25,7 @@ final class SettingsWindowController: NSWindowController {
     // 隐私与启动
     private let sensitiveCheckbox = NSButton(checkboxWithTitle: "忽略密码管理器等标记为敏感/临时的内容", target: nil, action: nil)
     private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: "登录时自动启动", target: nil, action: nil)
+    private let checkUpdatesCheckbox = NSButton(checkboxWithTitle: "启动时检查更新（只向 GitHub 发一个 GET，不含任何个人信息）", target: nil, action: nil)
     private let ignoredAppsField = NSTextField(string: "")
 
     // AI
@@ -139,6 +140,8 @@ final class SettingsWindowController: NSWindowController {
         ]))
         wire(launchAtLoginCheckbox)
         stack.addArrangedSubview(launchAtLoginCheckbox)
+        wire(checkUpdatesCheckbox)
+        stack.addArrangedSubview(checkUpdatesCheckbox)
 
         stack.addArrangedSubview(separatorBox())
         stack.addArrangedSubview(sectionTitle("AI 建议"))
@@ -254,6 +257,7 @@ final class SettingsWindowController: NSWindowController {
         keyboardCheckbox.state = settings.keyboardShortcuts ? .on : .off
         sensitiveCheckbox.state = settings.ignoreSensitive ? .on : .off
         launchAtLoginCheckbox.state = settings.launchAtLogin ? .on : .off
+        checkUpdatesCheckbox.state = settings.checkForUpdates ? .on : .off
 
         if let index = autoDismissOptions.firstIndex(where: { $0.seconds == settings.autoDismissSeconds }) {
             autoDismissPopup.selectItem(at: index)
@@ -312,6 +316,7 @@ final class SettingsWindowController: NSWindowController {
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }
             settings.launchAtLogin = launchAtLoginCheckbox.state == .on
+            settings.checkForUpdates = checkUpdatesCheckbox.state == .on
 
             settings.ai.enabled = aiEnabledCheckbox.state == .on
             settings.ai.baseURL = aiBaseURLField.stringValue.trimmingCharacters(in: .whitespaces)

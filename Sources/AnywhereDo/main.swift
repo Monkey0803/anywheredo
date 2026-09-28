@@ -30,6 +30,7 @@ if arguments.contains("--help") || arguments.contains("-h") {
       AnywhereDo                        启动菜单栏应用
       AnywhereDo --analyze "文本"       只做一次分析并打印结果（调试用）
       AnywhereDo --analyze -            从 stdin 读取内容再分析
+      AnywhereDo --check-update         检查 GitHub 上是否有新版本
       AnywhereDo --accessibility        打印辅助功能授权状态
       AnywhereDo --selection            打印当前聚焦 App 里选中的文字（验证划词）
       AnywhereDo --copy-probe           在终端里验证「合成 ⌘C + 还原剪贴板」兜底
@@ -40,7 +41,7 @@ if arguments.contains("--help") || arguments.contains("-h") {
 }
 
 if arguments.contains("--version") {
-    print("AnywhereDo 1.0.0")
+    print("AnywhereDo \(AnywhereDoVersion.marketing)")
     exit(0)
 }
 
@@ -53,6 +54,33 @@ if let index = arguments.firstIndex(of: "--analyze") {
     }
     printAnalysis(text)
     exit(0)
+}
+
+if arguments.contains("--check-update") {
+    // 需要一个 run loop 来收 URLSession 回到主队列的回调，不能直接 wait 信号量。
+    var finished = false
+    var info: UpdateInfo?
+    UpdateChecker.check { result in
+        info = result
+        finished = true
+    }
+    let deadline = Date().addingTimeInterval(20)
+    while !finished && Date() < deadline {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+    }
+    guard finished else {
+        print("检查更新超时（网络不可达？）")
+        exit(2)
+    }
+    print("当前版本：\(AnywhereDoVersion.marketing)")
+    if let info {
+        print("有新版本：\(info.version)")
+        print("下载页：\(info.url.absoluteString)")
+        exit(0)
+    } else {
+        print("已是最新")
+        exit(0)
+    }
 }
 
 if arguments.contains("--accessibility") {

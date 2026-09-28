@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastAnchor: PopupAnchor = .point(.zero)
     /// 「划词」和「复制」可能对同一段文字各触发一次，短时间内去重。
     private var lastTrigger: (text: String, date: Date)?
+    /// 检查更新发现的可用新版本（nil = 已是最新或还没查到）。
+    private var availableUpdate: UpdateInfo?
     private var recent: [(text: String, analysis: ClipboardAnalysis)] = []
     private var aiTask: Task<Void, Never>?
     /// 用户在系统设置里勾选「辅助功能」后，不需要重启 App 就能生效。
@@ -96,6 +98,59 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if openSettingsOnLaunch {
             openSettings()
         }
+
+        scheduleAutomaticUpdateCheck()
+    }
+
+    // MARK: - 检查更新
+
+    private func scheduleAutomaticUpdateCheck() {
+        guard store.settings.checkForUpdates else { return }
+        if let last = store.settings.lastUpdateCheck,
+           Date().timeIntervalSince(last) < UpdateChecker.minimumInterval {
+            Diagnostics.log("检查更新：距上次不足 6 小时，跳过自动检查")
+            return
+        }
+        // 启动后晚一点再查，别和权限引导之类抢戏。
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
+            self?.performUpdateCheck(manual: false)
+        }
+    }
+
+    private func performUpdateCheck(manual: Bool) {
+        guard manual || store.settings.checkForUpdates else { return }
+        UpdateChecker.check { [weak self] info in
+            guard let self else { return }
+            self.store.update { $0.lastUpdateCheck = Date() }
+            self.availableUpdate = info
+            self.rebuildMenu()
+            guard manual else { return }
+            NSApp.activate(ignoringOtherApps: true)
+            let alert = NSAlert()
+            if let info {
+                alert.messageText = "有新版本 \(info.version)"
+                alert.informativeText = "当前版本 \(AnywhereDoVersion.marketing)。是否打开下载页？"
+                alert.addButton(withTitle: "打开下载页")
+                alert.addButton(withTitle: "稍后")
+                if alert.runModal() == .alertFirstButtonReturn {
+                    NSWorkspace.shared.open(info.url)
+                }
+            } else {
+                alert.messageText = "已是最新版本"
+                alert.informativeText = "当前 \(AnywhereDoVersion.marketing)。"
+                alert.addButton(withTitle: "好")
+                alert.runModal()
+            }
+        }
+    }
+
+    @objc private func checkForUpdatesNow() {
+        performUpdateCheck(manual: true)
+    }
+
+    @objc private func openUpdatePage() {
+        guard let info = availableUpdate else { return }
+        NSWorkspace.shared.open(info.url)
     }
 
     /// 权限可能在使用过程中才被授予：定期比对一下运行状态，需要时重新应用设置。
@@ -438,6 +493,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(header)
         menu.addItem(.separator())
 
+        if let update = availableUpdate {
+            let item = NSMenuItem(
+                title: "🎉 有新版本 \(update.version)，点此查看",
+                action: #selector(openUpdatePage),
+                keyEquivalent: ""
+            )
+            item.target = self
+            menu.addItem(item)
+            menu.addItem(.separator())
+        }
+
         let master = NSMenuItem(title: "启用 AnywhereDo", action: #selector(toggleEnabled), keyEquivalent: "")
         master.target = self
         master.state = store.settings.enabled ? .on : .off
@@ -511,6 +577,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let config = NSMenuItem(title: "打开配置文件", action: #selector(openConfigFile), keyEquivalent: "")
         config.target = self
         menu.addItem(config)
+
+        let checkUpdate = NSMenuItem(title: "检查更新…", action: #selector(checkForUpdatesNow), keyEquivalent: "")
+        checkUpdate.target = self
+        menu.addItem(checkUpdate)
 
         let about = NSMenuItem(title: "关于 AnywhereDo", action: #selector(showAbout), keyEquivalent: "")
         about.target = self
@@ -642,7 +712,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func showAbout() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
-        alert.messageText = "AnywhereDo"
+        alert.messageText = "AnywhereDo \(AnywhereDoVersion.marketing)"
         alert.informativeText = """
         复制任意内容，鼠标旁边就会出现针对内容的建议。
 
