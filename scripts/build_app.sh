@@ -1,18 +1,28 @@
 #!/bin/bash
 # 构建 AnywhereDo.app（ad-hoc 签名，可直接双击运行）。
+#
+#   ./scripts/build_app.sh                     本机架构
+#   UNIVERSAL=1 ./scripts/build_app.sh         arm64 + x86_64 通用二进制（分发用）
+#   CONFIG=debug ./scripts/build_app.sh        调试构建
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 CONFIG="${CONFIG:-release}"
+UNIVERSAL="${UNIVERSAL:-0}"
 APP_NAME="AnywhereDo"
 BUILD_DIR="build"
 APP="$BUILD_DIR/$APP_NAME.app"
 
-echo "==> swift build -c $CONFIG"
-swift build -c "$CONFIG"
-
-BIN="$(swift build -c "$CONFIG" --show-bin-path)/$APP_NAME"
+if [ "$UNIVERSAL" = "1" ]; then
+  echo "==> swift build -c $CONFIG --arch arm64 --arch x86_64"
+  swift build -c "$CONFIG" --arch arm64 --arch x86_64
+  BIN="$(swift build -c "$CONFIG" --arch arm64 --arch x86_64 --show-bin-path)/$APP_NAME"
+else
+  echo "==> swift build -c $CONFIG"
+  swift build -c "$CONFIG"
+  BIN="$(swift build -c "$CONFIG" --show-bin-path)/$APP_NAME"
+fi
 if [ ! -x "$BIN" ]; then
   echo "找不到可执行文件：$BIN" >&2
   exit 1

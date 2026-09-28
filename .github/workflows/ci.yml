@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: 构建与单元测试
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 环境信息
+        run: |
+          sw_vers
+          swift --version
+          xcodebuild -version
+
+      - name: 构建内核与 App
+        run: swift build --build-tests
+
+      - name: 单元测试
+        run: swift test
+
+      - name: 用构建脚本打包通用 .app
+        run: UNIVERSAL=1 ./scripts/build_app.sh
+
+      - name: 校验产物
+        run: |
+          test -x build/AnywhereDo.app/Contents/MacOS/AnywhereDo
+          lipo -info build/AnywhereDo.app/Contents/MacOS/AnywhereDo
+          codesign -dv build/AnywhereDo.app 2>&1 | head -4
+
+      - name: 上传 .app
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnywhereDo-app
+          path: build/AnywhereDo.app
+          if-no-files-found: error
