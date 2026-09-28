@@ -128,17 +128,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             NSApp.activate(ignoringOtherApps: true)
             let alert = NSAlert()
             if let info {
-                alert.messageText = "有新版本 \(info.version)"
-                alert.informativeText = "当前版本 \(AnywhereDoVersion.marketing)。是否打开下载页？"
-                alert.addButton(withTitle: "打开下载页")
-                alert.addButton(withTitle: "稍后")
+                alert.messageText = L10n.t("alert.updateAvailable", info.version)
+                alert.informativeText = L10n.t("alert.updateAvailableBody", AnywhereDoVersion.marketing)
+                alert.addButton(withTitle: L10n.t("alert.openDownload"))
+                alert.addButton(withTitle: L10n.t("alert.later"))
                 if alert.runModal() == .alertFirstButtonReturn {
                     NSWorkspace.shared.open(info.url)
                 }
             } else {
-                alert.messageText = "已是最新版本"
-                alert.informativeText = "当前 \(AnywhereDoVersion.marketing)。"
-                alert.addButton(withTitle: "好")
+                alert.messageText = L10n.t("alert.upToDate")
+                alert.informativeText = L10n.t("alert.upToDateBody", AnywhereDoVersion.marketing)
+                alert.addButton(withTitle: L10n.t("alert.ok"))
                 alert.runModal()
             }
         }
@@ -179,22 +179,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             // 系统框会把 App 自动加进辅助功能列表，避免两个弹窗叠在一起。
             NSApp.activate(ignoringOtherApps: true)
             let alert = NSAlert()
-            alert.messageText = "划词即弹需要「辅助功能」权限"
-            alert.informativeText = """
-            复制模式已经在工作，不需要任何权限。
-
-            但「选中文字就弹」要读别的 App 里的选区文本和位置，只能用辅助功能 API，需要你手动授权一次：
-
-            1. 点下面的「打开系统设置」
-            2. 在「隐私与安全性 → 辅助功能」里勾选 AnywhereDo
-               （路径：\(Bundle.main.bundlePath)）
-            3. 不用重启，授权后 3 秒内自动生效
-
-            如果列表里已经有了 AnywhereDo 但依然提示未授权，把它删除后重新添加即可
-            （每次重新编译 App 会改变签名，旧授权会失效）。
-            """
-            alert.addButton(withTitle: "打开辅助功能设置")
-            alert.addButton(withTitle: "稍后")
+            alert.messageText = L10n.t("alert.accessibilityTitle")
+            alert.informativeText = L10n.t("alert.accessibilityBody", Bundle.main.bundlePath)
+            alert.addButton(withTitle: L10n.t("alert.openAccessibility"))
+            alert.addButton(withTitle: L10n.t("alert.later"))
             if alert.runModal() == .alertFirstButtonReturn {
                 _ = SelectionWatcher.requestPermission()
                 SelectionWatcher.openAccessibilitySettings()
@@ -355,7 +343,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let card = ResultCardView(title: title, body: body, monospaced: monospaced, isError: isError)
         card.onCopy = { [weak self] text in
             self?.runner.writeToPasteboard(text)
-            self?.showToast("已复制结果")
+            self?.showToast(L10n.t("toast.copiedResult"))
         }
         card.onBack = { [weak self] in
             guard let self, let analysis = self.lastAnalysis else { return }
@@ -366,7 +354,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func runAI(preset: AIPreset, source: String) {
         guard store.settings.ai.isUsable else {
-            showToast("尚未配置 AI 模型", symbol: "gearshape", tint: .systemOrange)
+            showToast(L10n.t("toast.aiNotConfigured"), symbol: "gearshape", tint: .systemOrange)
             return
         }
         let client = AIClient(config: store.settings.ai)
@@ -381,7 +369,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 }
             } catch {
                 await MainActor.run {
-                    self.showResult(title: "\(preset.title) 失败", body: error.localizedDescription, monospaced: false, isError: true)
+                    self.showResult(title: L10n.t("toast.aiFailed", preset.title), body: error.localizedDescription, monospaced: false, isError: true)
                 }
             }
         }
@@ -398,30 +386,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let appItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "设置…", action: #selector(openSettings), keyEquivalent: ",").target = self
-        appMenu.addItem(withTitle: "打开诊断日志", action: #selector(openDiagnostics), keyEquivalent: "").target = self
-        appMenu.addItem(withTitle: "关于 AnywhereDo", action: #selector(showAbout), keyEquivalent: "").target = self
+        appMenu.addItem(withTitle: L10n.t("menu.settings"), action: #selector(openSettings), keyEquivalent: ",").target = self
+        appMenu.addItem(withTitle: L10n.t("menu.diagnostics"), action: #selector(openDiagnostics), keyEquivalent: "").target = self
+        appMenu.addItem(withTitle: L10n.t("menu.about"), action: #selector(showAbout), keyEquivalent: "").target = self
         appMenu.addItem(.separator())
-        appMenu.addItem(withTitle: "退出 AnywhereDo", action: #selector(quit), keyEquivalent: "q").target = self
+        appMenu.addItem(withTitle: L10n.t("menu.quitApp"), action: #selector(quit), keyEquivalent: "q").target = self
         appItem.submenu = appMenu
         mainMenu.addItem(appItem)
 
         // 关键：这些 item 不给 target，nil-target 动作会沿响应链找到当前文本框。
-        let editMenu = NSMenu(title: "编辑")
-        editMenu.addItem(withTitle: "撤销", action: NSSelectorFromString("undo:"), keyEquivalent: "z")
-        editMenu.addItem(withTitle: "重做", action: NSSelectorFromString("redo:"), keyEquivalent: "Z")
+        let editMenu = NSMenu(title: L10n.t("menu.edit"))
+        editMenu.addItem(withTitle: L10n.t("menu.undo"), action: NSSelectorFromString("undo:"), keyEquivalent: "z")
+        editMenu.addItem(withTitle: L10n.t("menu.redo"), action: NSSelectorFromString("redo:"), keyEquivalent: "Z")
         editMenu.addItem(.separator())
-        editMenu.addItem(withTitle: "剪切", action: NSSelectorFromString("cut:"), keyEquivalent: "x")
-        editMenu.addItem(withTitle: "拷贝", action: NSSelectorFromString("copy:"), keyEquivalent: "c")
-        editMenu.addItem(withTitle: "粘贴", action: NSSelectorFromString("paste:"), keyEquivalent: "v")
-        editMenu.addItem(withTitle: "删除", action: NSSelectorFromString("delete:"), keyEquivalent: "")
-        editMenu.addItem(withTitle: "全选", action: NSSelectorFromString("selectAll:"), keyEquivalent: "a")
+        editMenu.addItem(withTitle: L10n.t("menu.cut"), action: NSSelectorFromString("cut:"), keyEquivalent: "x")
+        editMenu.addItem(withTitle: L10n.t("menu.copy"), action: NSSelectorFromString("copy:"), keyEquivalent: "c")
+        editMenu.addItem(withTitle: L10n.t("menu.paste"), action: NSSelectorFromString("paste:"), keyEquivalent: "v")
+        editMenu.addItem(withTitle: L10n.t("menu.delete"), action: NSSelectorFromString("delete:"), keyEquivalent: "")
+        editMenu.addItem(withTitle: L10n.t("menu.selectAll"), action: NSSelectorFromString("selectAll:"), keyEquivalent: "a")
         let editItem = NSMenuItem()
         editItem.submenu = editMenu
         mainMenu.addItem(editItem)
 
-        let windowMenu = NSMenu(title: "窗口")
-        windowMenu.addItem(withTitle: "关闭", action: NSSelectorFromString("performClose:"), keyEquivalent: "w")
+        let windowMenu = NSMenu(title: L10n.t("menu.window"))
+        windowMenu.addItem(withTitle: L10n.t("menu.close"), action: NSSelectorFromString("performClose:"), keyEquivalent: "w")
         let windowItem = NSMenuItem()
         windowItem.submenu = windowMenu
         mainMenu.addItem(windowItem)
@@ -476,11 +464,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         button.image = image
         button.appearsDisabled = !store.settings.enabled
         if !store.settings.enabled {
-            button.toolTip = "AnywhereDo：已暂停"
+            button.toolTip = L10n.t("status.paused")
         } else if store.settings.watchSelection && !SelectionWatcher.isTrusted {
-            button.toolTip = "AnywhereDo：划词需要辅助功能权限"
+            button.toolTip = L10n.t("status.needsAccessibility")
         } else {
-            button.toolTip = "AnywhereDo：正在监听"
+            button.toolTip = L10n.t("status.listening")
         }
     }
 
@@ -488,14 +476,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let menu = statusItem?.menu else { return }
         menu.removeAllItems()
 
-        let header = NSMenuItem(title: "AnywhereDo · 复制即建议", action: nil, keyEquivalent: "")
+        let header = NSMenuItem(title: L10n.t("menu.header"), action: nil, keyEquivalent: "")
         header.isEnabled = false
         menu.addItem(header)
         menu.addItem(.separator())
 
         if let update = availableUpdate {
             let item = NSMenuItem(
-                title: "🎉 有新版本 \(update.version)，点此查看",
+                title: L10n.t("menu.newVersion", update.version),
                 action: #selector(openUpdatePage),
                 keyEquivalent: ""
             )
@@ -504,23 +492,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(.separator())
         }
 
-        let master = NSMenuItem(title: "启用 AnywhereDo", action: #selector(toggleEnabled), keyEquivalent: "")
+        let master = NSMenuItem(title: L10n.t("menu.enable"), action: #selector(toggleEnabled), keyEquivalent: "")
         master.target = self
         master.state = store.settings.enabled ? .on : .off
         menu.addItem(master)
 
-        let clipboard = NSMenuItem(title: "复制后弹出建议（会读剪贴板内容）", action: #selector(toggleClipboard), keyEquivalent: "")
+        let clipboard = NSMenuItem(title: L10n.t("menu.watchClipboard"), action: #selector(toggleClipboard), keyEquivalent: "")
         clipboard.target = self
         clipboard.state = store.settings.watchClipboard ? .on : .off
         menu.addItem(clipboard)
 
-        let selection = NSMenuItem(title: "划词即弹（选中文字后就弹）", action: #selector(toggleSelection), keyEquivalent: "")
+        let selection = NSMenuItem(title: L10n.t("menu.watchSelection"), action: #selector(toggleSelection), keyEquivalent: "")
         selection.target = self
         selection.state = store.settings.watchSelection ? .on : .off
         menu.addItem(selection)
 
         let fallback = NSMenuItem(
-            title: "划词兜底：用 ⌘C 读 Electron 类 App（会短暂改写剪贴板）",
+            title: L10n.t("menu.copyFallback"),
             action: #selector(toggleCopyFallback),
             keyEquivalent: ""
         )
@@ -530,7 +518,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if store.settings.watchSelection && !SelectionWatcher.isTrusted {
             let permission = NSMenuItem(
-                title: "⚠️ 划词需要「辅助功能」权限，点此授予…",
+                title: L10n.t("menu.grantAccessibility"),
                 action: #selector(requestAccessibility),
                 keyEquivalent: ""
             )
@@ -540,21 +528,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        let analyze = NSMenuItem(title: "立即分析当前剪贴板", action: #selector(analyzeNow), keyEquivalent: "")
+        let analyze = NSMenuItem(title: L10n.t("menu.analyzeClipboard"), action: #selector(analyzeNow), keyEquivalent: "")
         analyze.target = self
         menu.addItem(analyze)
 
-        let diagnose = NSMenuItem(title: "自检：读取当前选区", action: #selector(diagnoseSelection), keyEquivalent: "")
+        let diagnose = NSMenuItem(title: L10n.t("menu.selfCheck"), action: #selector(diagnoseSelection), keyEquivalent: "")
         diagnose.target = self
         menu.addItem(diagnose)
 
-        let logItem = NSMenuItem(title: "打开诊断日志", action: #selector(openDiagnostics), keyEquivalent: "")
+        let logItem = NSMenuItem(title: L10n.t("menu.diagnostics"), action: #selector(openDiagnostics), keyEquivalent: "")
         logItem.target = self
         menu.addItem(logItem)
 
         if !recent.isEmpty {
             menu.addItem(.separator())
-            let recentItem = NSMenuItem(title: "最近复制", action: nil, keyEquivalent: "")
+            let recentItem = NSMenuItem(title: L10n.t("menu.recent"), action: nil, keyEquivalent: "")
             let submenu = NSMenu()
             for (index, entry) in recent.enumerated() {
                 let title = "\(index + 1). " + shortLabel(entry.analysis)
@@ -570,24 +558,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        let settings = NSMenuItem(title: "设置…", action: #selector(openSettings), keyEquivalent: ",")
+        let settings = NSMenuItem(title: L10n.t("menu.settings"), action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
         menu.addItem(settings)
 
-        let config = NSMenuItem(title: "打开配置文件", action: #selector(openConfigFile), keyEquivalent: "")
+        let config = NSMenuItem(title: L10n.t("menu.openConfig"), action: #selector(openConfigFile), keyEquivalent: "")
         config.target = self
         menu.addItem(config)
 
-        let checkUpdate = NSMenuItem(title: "检查更新…", action: #selector(checkForUpdatesNow), keyEquivalent: "")
+        let checkUpdate = NSMenuItem(title: L10n.t("menu.checkUpdate"), action: #selector(checkForUpdatesNow), keyEquivalent: "")
         checkUpdate.target = self
         menu.addItem(checkUpdate)
 
-        let about = NSMenuItem(title: "关于 AnywhereDo", action: #selector(showAbout), keyEquivalent: "")
+        let about = NSMenuItem(title: L10n.t("menu.about"), action: #selector(showAbout), keyEquivalent: "")
         about.target = self
         menu.addItem(about)
 
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "退出", action: #selector(quit), keyEquivalent: "q")
+        let quit = NSMenuItem(title: L10n.t("menu.quit"), action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
     }
@@ -631,7 +619,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openDiagnostics() {
         Diagnostics.log("用户打开了诊断日志；权限=" + (SelectionWatcher.isTrusted ? "已授予" : "未授予")
-            + " 划词运行中=" + (selectionWatcher.isRunning ? "是" : "否"))
+            + L10n.t("selfcheck.running", selectionWatcher.isRunning ? L10n.t("cli.yes") : L10n.t("cli.no")))
         Diagnostics.reveal()
     }
 
@@ -643,28 +631,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// 自检：确认当前 App 能不能通过辅助功能读到选区。
     @objc private func diagnoseSelection() {
         NSApp.activate(ignoringOtherApps: true)
-        let selectionInfo = Accessibility.currentSelectionText().map { "读到 \($0.count) 字" } ?? "无选区"
+        let selectionInfo = Accessibility.currentSelectionText().map { L10n.t("selfcheck.readSome", $0.count) } ?? L10n.t("selfcheck.noSelectionShort")
         Diagnostics.log("自检：权限=" + (SelectionWatcher.isTrusted ? "已授予" : "未授予") + " " + selectionInfo)
         let alert = NSAlert()
-        alert.messageText = "划词自检"
+        alert.messageText = L10n.t("selfcheck.title")
         var lines: [String] = []
 
-        lines.append(SelectionWatcher.isTrusted ? "辅助功能权限：已授予 ✅" : "辅助功能权限：未授予 ❌")
+        lines.append(SelectionWatcher.isTrusted ? L10n.t("selfcheck.granted") : L10n.t("selfcheck.denied"))
         if let app = NSWorkspace.shared.frontmostApplication {
-            lines.append("当前最前台 App：\(app.localizedName ?? "未知")")
+            lines.append(L10n.t("selfcheck.frontmost", app.localizedName ?? L10n.t("cli.unknownApp")))
         }
         if let text = Accessibility.currentSelectionText(), !text.isEmpty {
             let preview = text.count > 60 ? String(text.prefix(60)) + "…" : text
-            lines.append("读到选区（\(text.count) 字）：\(preview)")
-            lines.append("选区文本可以读到，坐标取决于该 App 是否支持 AXBoundsForRange。")
+            lines.append(L10n.t("selfcheck.readSelection", text.count, preview))
+            lines.append(L10n.t("selfcheck.boundsNote"))
         } else {
-            lines.append("当前没有读到选区。请先在某个 App 里选中一段文字，再执行一次自检。")
-            lines.append("若显示未授权：打开「系统设置 → 隐私与安全性 → 辅助功能」，勾选 AnywhereDo 后重试。")
+            lines.append(L10n.t("selfcheck.noSelection"))
+            lines.append(L10n.t("selfcheck.permissionHint"))
         }
         alert.informativeText = lines.joined(separator: "\n")
-        alert.addButton(withTitle: "好")
+        alert.addButton(withTitle: L10n.t("alert.ok"))
         if !SelectionWatcher.isTrusted {
-            alert.addButton(withTitle: "打开系统设置")
+            alert.addButton(withTitle: L10n.t("selfcheck.openSettings"))
             if alert.runModal() == .alertSecondButtonReturn {
                 SelectionWatcher.openAccessibilitySettings()
             }
@@ -676,7 +664,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func analyzeNow() {
         let pasteboard = NSPasteboard.general
         guard let text = pasteboard.string(forType: .string), !text.isEmpty else {
-            showToast("剪贴板里没有文本", symbol: "clipboard", tint: .systemOrange)
+            showToast(L10n.t("toast.noTextOnClipboard"), symbol: "clipboard", tint: .systemOrange)
             return
         }
         let frontmost = NSWorkspace.shared.frontmostApplication
@@ -725,7 +713,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         设置文件：\(SettingsStore.fileURL.path)
         """
-        alert.addButton(withTitle: "好")
+        alert.addButton(withTitle: L10n.t("alert.ok"))
         alert.runModal()
     }
 

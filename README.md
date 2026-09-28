@@ -311,6 +311,19 @@ Sources/AnywhereDo/             AppKit 外壳（菜单栏应用，LSUIElement）
 3. `Analyzer.buildSuggestions` 的 `switch` 里加对应建议，动作复用已有的 `SuggestionAction`。
 4. 在 `Tests/AnywhereDoCoreTests/CoreTests.swift` 补一条断言，`swift test` 通过即可。
 
+## 多语言
+
+界面语言跟随系统偏好设置（简体中文与英文，未匹配到的语言回退到英文）：
+
+- 所有用户可见文案都走 `Sources/AnywhereDoCore/L10n.swift`，字符串表在
+  `Sources/AnywhereDoCore/Resources/<语言>.lproj/Localizable.strings`，Core 与 App 共用一张表。
+- **AI 的系统提示词也在表里**，所以英文界面下模型会用英文回答。
+- **诊断日志固定为中文**：这样任何人贴出的日志都能对着同一张排查表看，不必先判断语言。
+- 新增一种语言：复制 `en.lproj` 为 `<新语言>.lproj` 并翻译值（**key 不要改**），
+  然后跑 `swift test`——`LocalizationTests` 会校验两张表 key 完全一致、
+  每个 `L10n.t("…")` 调用点都有对应条目、枚举出来的 key 一个不缺。
+- 调试：`AnywhereDo --strings` 会打印系统偏好语言、资源提供语言与当前生效语言。
+
 ## 已知限制
 
 - 轮询间隔 0.35s，极快的连续复制/连续改选只会响应最后一次。

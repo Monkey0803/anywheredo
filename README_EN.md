@@ -345,6 +345,20 @@ Sources/AnywhereDo/             AppKit shell (menu-bar app, LSUIElement)
    `SuggestionAction` cases.
 4. Add an assertion to `Tests/AnywhereDoCoreTests/CoreTests.swift` and make `swift test` pass.
 
+## Localization
+
+The UI follows the system language (Simplified Chinese and English; anything else falls back to English):
+
+- Every user-visible string goes through `Sources/AnywhereDoCore/L10n.swift`, with the tables in
+  `Sources/AnywhereDoCore/Resources/<language>.lproj/Localizable.strings` — Core and the app share one table.
+- **The AI system prompts live in the same table**, so an English UI also gets English answers from the model.
+- **Diagnostics logs stay Chinese on purpose**: any pasted log can be read against a single
+  troubleshooting table without first working out its language.
+- Adding a language: copy `en.lproj` to `<new-language>.lproj` and translate the values
+  (**never change the keys**), then run `swift test` — `LocalizationTests` asserts that both tables
+  have identical keys, that every `L10n.t("…")` call site has an entry, and that every enumerated key resolves.
+- Debugging: `AnywhereDo --strings` prints the preferred languages, the bundled languages and the active one.
+
 ## Known limitations
 
 - Polling interval is 0.35s: extremely fast consecutive copies or selection changes only react to the

@@ -213,6 +213,74 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    /// 扫源码里所有 `L10n.t("key")` 调用点，确保 key 在两张表里都存在。
+    /// 少了这条，漏 key 的后果是界面直接显示成 key 本身——很难在测试里被发现。
+    func testEveryCallSiteKeyExists() throws {
+        let sources = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()   // AnywhereDoCoreTests
+            .deletingLastPathComponent()   // Tests
+            .deletingLastPathComponent()   // 仓库根
+            .appendingPathComponent("Sources")
+        let files = FileManager.default.enumerator(at: sources, includingPropertiesForKeys: nil)?
+            .compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" } ?? []
+        XCTAssertFalse(files.isEmpty, "找不到 Sources 下的 Swift 文件")
+
+        let pattern = try NSRegularExpression(pattern: #"L10n\.t\("([^"]+)""#)
+        var keys = Set<String>()
+        for file in files {
+            let text = try String(contentsOf: file, encoding: .utf8)
+            let range = NSRange(text.startIndex..., in: text)
+            for match in pattern.matches(in: text, range: range) {
+                if let r = Range(match.range(at: 1), in: text) { keys.insert(String(text[r])) }
+            }
+        }
+        XCTAssertGreaterThan(keys.count, 150, "扫描到的 key 太少（\(keys.count)），正则可能失效")
+        // 动态拼出来的 key（"kind.\(rawValue)" 这类）由下面的枚举测试逐个覆盖
+        keys = keys.filter { !$0.contains("\\(") }
+
+        for language in ["zh-Hans", "en"] {
+            guard let table = L10n.table(for: language) else { return XCTFail("缺 \(language)") }
+            let missing = keys.subtracting(table.keys).sorted()
+            XCTAssertTrue(missing.isEmpty, "\(language) 表缺少这些 key：\(missing)")
+        }
+    }
+
+    /// 动态 key 的覆盖面：每个枚举 case 拼出来的 key 必须在两张表里都能查到。
+    func testEnumeratedKeysResolveInBothLanguages() {
+        for language in ["zh-Hans", "en"] {
+            guard let table = L10n.table(for: language) else { return XCTFail("缺 \(language)") }
+            func check(_ key: String, _ what: String) {
+                XCTAssertNotNil(table[key], "\(language) 表缺少 \(what) 的 key：\(key)")
+            }
+            for kind in ContentKind.allCases { check("kind.\(kind.rawValue)", "内容类型") }
+            for transform in TextTransform.allCases {
+                check("transform.\(transform.rawValue).title", "变换标题")
+                check("transform.\(transform.rawValue).result", "变换结果标题")
+            }
+            for preset in AIPreset.allCases {
+                check("ai.\(preset.rawValue)", "AI 动作")
+                check("ai.\(preset.rawValue).prompt", "AI 提示词")
+            }
+        }
+    }
+
+    /// 枚举出来的文案不能等于 key 本身（等于就是漏翻）。
+    func testEnumeratedTitlesAreTranslated() {
+        for kind in ContentKind.allCases {
+            XCTAssertNotEqual(kind.displayName, "kind.\(kind.rawValue)", "内容类型 \(kind.rawValue) 没翻译")
+        }
+        for transform in TextTransform.allCases {
+            XCTAssertNotEqual(transform.title, "transform.\(transform.rawValue).title", "\(transform.rawValue) 标题没翻译")
+            XCTAssertNotEqual(transform.resultTitle, "transform.\(transform.rawValue).result", "\(transform.rawValue) 结果标题没翻译")
+        }
+        for preset in AIPreset.allCases {
+            XCTAssertNotEqual(preset.title, "ai.\(preset.rawValue)", "\(preset.rawValue) 没翻译")
+            XCTAssertFalse(preset.systemPrompt.isEmpty, "\(preset.rawValue) 提示词为空")
+            XCTAssertNotEqual(preset.systemPrompt, "ai.\(preset.rawValue).prompt", "\(preset.rawValue) 提示词没翻译")
+        }
+    }
+
     func testLanguageResolution() {
         XCTAssertEqual(L10n.resolveLanguage(from: ["zh-Hans-CN"]), "zh-Hans")
         XCTAssertEqual(L10n.resolveLanguage(from: ["zh-Hans"]), "zh-Hans")
