@@ -84,7 +84,7 @@ final class AnalyzerSuggestionTests: XCTestCase {
     func testURLSuggestions() {
         let analysis = analyzer.analyze("https://github.com/apple/swift", fileExists: { _ in false })
         XCTAssertEqual(analysis.kind, .url)
-        XCTAssertTrue(analysis.suggestions.contains { $0.title.contains("打开") })
+        XCTAssertTrue(analysis.suggestions.contains { $0.title == L10n.t("suggest.url.open") })
         guard let markdown = analysis.suggestions.first(where: { $0.id == "md" }),
               case .copyText(let text) = markdown.action else {
             return XCTFail("应该有 Markdown 复制建议")
@@ -113,7 +113,7 @@ final class AnalyzerSuggestionTests: XCTestCase {
 
     func testTimestampFacts() {
         let analysis = analyzer.analyze("1700000000", fileExists: { _ in false })
-        XCTAssertTrue(analysis.facts.contains { $0.label == "本地" })
+        XCTAssertTrue(analysis.facts.contains { $0.label == L10n.t("fact.localTime") })
         XCTAssertEqual(analysis.headline.isEmpty, false)
     }
 
@@ -144,9 +144,9 @@ final class AnalyzerSuggestionTests: XCTestCase {
         let analysis = analyzer.analyze(code)
         XCTAssertEqual(analysis.lineCount, 4)
         XCTAssertFalse(analysis.lineCountIsEstimated)
-        XCTAssertEqual(analysis.headline, "4 行代码")
-        XCTAssertTrue(analysis.facts.contains { $0.label == "行数" && $0.value == "4" })
-        XCTAssertTrue(analysis.facts.contains { $0.label == "字数" && $0.value.contains("· 4 行") })
+        XCTAssertEqual(analysis.headline, L10n.t("headline.codeLines", 4))
+        XCTAssertTrue(analysis.facts.contains { $0.label == L10n.t("fact.lineCount") && $0.value == "4" })
+        XCTAssertTrue(analysis.facts.contains { $0.label == L10n.t("fact.wordCount") && $0.value.hasSuffix(L10n.t("common.linesSuffix", 4)) })
     }
 
     /// 浏览器会把逐行渲染的代码块拍平，选区文本里没有换行符——
@@ -159,9 +159,9 @@ final class AnalyzerSuggestionTests: XCTestCase {
         )
         XCTAssertEqual(analysis.lineCount, 9)
         XCTAssertTrue(analysis.lineCountIsEstimated)
-        XCTAssertEqual(analysis.headline, "约 9 行代码")
-        XCTAssertTrue(analysis.facts.contains { $0.label == "行数" && $0.value == "约 9" })
-        XCTAssertTrue(analysis.facts.contains { $0.label == "字数" && $0.value.contains("· 约 9 行") })
+        XCTAssertEqual(analysis.headline, L10n.t("headline.codeLinesApprox", 9))
+        XCTAssertTrue(analysis.facts.contains { $0.label == L10n.t("fact.lineCount") && $0.value == L10n.t("common.approxNumber", 9) })
+        XCTAssertTrue(analysis.facts.contains { $0.label == L10n.t("fact.wordCount") && $0.value.hasSuffix(L10n.t("common.linesApproxSuffix", 9)) })
     }
 
     func testFlattenedTextWithoutEstimateDoesNotClaimOneLine() {
@@ -169,14 +169,14 @@ final class AnalyzerSuggestionTests: XCTestCase {
         let analysis = analyzer.analyze(flattened)
         XCTAssertEqual(analysis.lineCount, 1)
         XCTAssertFalse(analysis.lineCountIsEstimated)
-        XCTAssertFalse(analysis.headline.contains("1 行代码"))
-        XCTAssertTrue(analysis.facts.allSatisfy { !$0.value.contains("1 行") })
+        XCTAssertFalse(analysis.headline.contains(L10n.t("headline.codeLines", 1)))
+        XCTAssertTrue(analysis.facts.allSatisfy { !$0.value.contains(L10n.t("common.linesSuffix", 1)) })
     }
 
     func testPlainTextWithoutNewlines() {
         let analysis = analyzer.analyze("这是一段没有换行的普通文本，只是比较长而已，用来确认标题不会写成一行。")
-        XCTAssertEqual(analysis.headline.contains("· 1 行"), false)
-        XCTAssertTrue(analysis.headline.hasSuffix("字符"))
+        XCTAssertEqual(analysis.headline.contains(L10n.t("common.linesSuffix", 1)), false)
+        XCTAssertEqual(analysis.headline, L10n.t("common.charCount", analysis.charCount))
     }
 
     func testStackTraceDetection() {
