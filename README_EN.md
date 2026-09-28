@@ -41,6 +41,12 @@ Grab `AnywhereDo-<version>-universal.zip` from
 [Releases](https://github.com/Monkey0803/anywheredo/releases), unzip it and drag `AnywhereDo.app`
 into `/Applications`.
 
+> **Signing note**: v1.0.0 is ad-hoc signed, so upgrading to the **first certificate-signed
+> release** requires removing and re-adding AnywhereDo in the Accessibility list once. From that
+> release onward, upgrades keep the same signing identity and no re-grant is needed
+> (see [RELEASING.md](RELEASING.md): an ad-hoc designated requirement is a cdhash, which changes
+> with every build).
+
 > AnywhereDo is **not distributed through the App Store** and is **not notarized** — releases come
 > from GitHub Releases and the Homebrew tap only. Both routes deliver a quarantined download
 > (Homebrew propagates the quarantine flag from the download to the installed app), so the first

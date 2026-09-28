@@ -13,12 +13,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # gitleaks 要扫全历史，浅克隆只有 1 个 commit
+          fetch-depth: 0
 
       - name: 环境信息
         run: |
           sw_vers
           swift --version
           xcodebuild -version
+
+      - name: 密钥扫描（gitleaks，扫全历史）
+        run: |
+          brew install gitleaks
+          gitleaks version
+          gitleaks detect --source . --redact --verbose
 
       - name: 构建内核与 App
         run: swift build --build-tests

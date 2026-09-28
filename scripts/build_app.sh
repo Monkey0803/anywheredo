@@ -46,8 +46,37 @@ for f in MenuBarIconTemplate.png MenuBarIconTemplate@2x.png; do
 done
 true
 
-echo "==> ad-hoc 签名"
-codesign --force --sign - "$APP" >/dev/null 2>&1 || echo "（签名失败，通常仍可运行）"
+# ---- 签名 ----
+# 给 SIGNING_IDENTITY（+ 可选 SIGNING_KEYCHAIN）就用固定证书签名。
+# 不设置则退回 ad-hoc —— 注意 ad-hoc 的 requirement 是 cdhash，
+# 重新编译或升级后，用户的「辅助功能」授权会失效。
+SIGNING_IDENTITY="${SIGNING_IDENTITY:-}"
+SIGNING_KEYCHAIN="${SIGNING_KEYCHAIN:-}"
+
+if [ -n "$SIGNING_IDENTITY" ]; then
+  echo "==> 用证书签名：$SIGNING_IDENTITY"
+  if [ -n "$SIGNING_KEYCHAIN" ]; then
+    codesign --force --sign "$SIGNING_IDENTITY" --keychain "$SIGNING_KEYCHAIN" "$APP"
+  else
+    codesign --force --sign "$SIGNING_IDENTITY" "$APP"
+  fi
+  echo "==> 校验签名"
+  codesign --verify --strict --verbose=1 "$APP" 2>&1 | tail -2
+else
+  echo "==> ad-hoc 签名（发布请用 SIGNING_IDENTITY 指定证书）"
+  codesign --force --sign - "$APP" >/dev/null 2>&1 || echo "（签名失败，通常仍可运行）"
+fi
+
+REQUIREMENT="$(codesign -d -r- "$APP" 2>&1 | tail -1 | sed 's/^designated => //')"
+echo
+echo "==> designated requirement（TCC 按它认授权）："
+echo "    $REQUIREMENT"
+case "$REQUIREMENT" in
+  *cdhash*)
+    echo "    ⚠️  含 cdhash：用户每次升级都要重新授权辅助功能" ;;
+  *)
+    echo "    ✅ 不含 cdhash：升级后授权保持有效" ;;
+esac
 
 echo
 echo "完成：$APP"

@@ -39,6 +39,10 @@ brew install --cask anywheredo
 从 [Releases](https://github.com/Monkey0803/anywheredo/releases) 下载
 `AnywhereDo-<版本>-universal.zip`（arm64 + x86_64 通用），解压后把 `AnywhereDo.app` 拖进 `/Applications`。
 
+> **签名说明**：v1.0.0 是 ad-hoc 签名，升级到**第一个使用固定证书签名的版本**时，
+> 需要在「辅助功能」列表里把 AnywhereDo 移除后重新添加一次；从那个版本起，后续升级不再需要重新授权
+> （原因见 [RELEASING.md](RELEASING.md)：ad-hoc 的 designated requirement 是 cdhash，代码一变就失效）。
+
 > AnywhereDo **不上架 App Store**，也**没有做 Apple 公证**，只通过 GitHub Release 与 Homebrew tap 分发。
 > 两种方式拿到的包都会被 macOS 打上隔离标记（Homebrew 会把下载物的隔离标记传播到安装后的 App），
 > 所以首次打开可能被 Gatekeeper 拦住（提示「无法验证开发者」或「已损坏」）。解决办法二选一：
