@@ -3,6 +3,8 @@
 [![CI](https://github.com/Monkey0803/anywheredo/actions/workflows/ci.yml/badge.svg)](https://github.com/Monkey0803/anywheredo/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+**简体中文** | [English](README_EN.md)
+
 macOS 上的菜单栏小工具：**选中一段文字，卡片直接贴在选区正下方**（像输入法候选框那样），
 不用先复制、不碰剪贴板。
 
@@ -16,13 +18,32 @@ macOS 上的菜单栏小工具：**选中一段文字，卡片直接贴在选区
 
 后两个随时可以在菜单栏 ✨ 或设置里一键打开。
 
-## 快速开始
+## 安装
+
+### Homebrew（推荐）
+
+```bash
+brew tap monkey0803/tap
+brew install --cask anywheredo
+```
+
+### 手动下载
+
+从 [Releases](https://github.com/Monkey0803/anywheredo/releases) 下载
+`AnywhereDo-<版本>-universal.zip`（arm64 + x86_64 通用），解压后把 `AnywhereDo.app` 拖进 `/Applications`。
+
+> AnywhereDo **不上架 App Store**，也**没有做 Apple 公证**，只通过 GitHub Release 与 Homebrew tap 分发。
+> 两种方式拿到的包都会被 macOS 打上隔离标记（Homebrew 会把下载物的隔离标记传播到安装后的 App），
+> 所以首次打开可能被 Gatekeeper 拦住（提示「无法验证开发者」或「已损坏」）。解决办法二选一：
+> **右键 → 打开**，或执行一次 `xattr -dr com.apple.quarantine /Applications/AnywhereDo.app`。
+
+### 从源码构建
 
 ```bash
 git clone https://github.com/Monkey0803/anywheredo.git
 cd anywheredo
 ./scripts/build_app.sh          # 需要 Xcode / Swift 工具链（macOS 13+）
-open build/AnywhereDo.app       # 菜单栏出现 ✨ 图标
+open build/AnywhereDo.app       # 菜单栏出现火花图标
 ```
 
 首次使用划词时系统会要求授予**辅助功能**权限（只读选区文本与坐标；复制模式不需要任何权限）。
