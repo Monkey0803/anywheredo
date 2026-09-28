@@ -50,10 +50,27 @@ echo "════ B. 行为检查（读诊断日志）════"
 if [ ! -f "$LOG" ]; then
   todo "还没有诊断日志：先启动一次 App"
 else
-  # 只认「最后一次启动」之后的记录，否则会把上一次会话的旧日志当成本次证据。
-  TAIL=$(awk '/===== 启动 =====/{buf=""} {buf=buf $0 ORS} END{printf "%s", buf}' "$LOG")
-  [ -n "$TAIL" ] || TAIL=$(tail -200 "$LOG")
-  echo "  （本次启动之后的日志 $(echo "$TAIL" | grep -c . ) 行）"
+  # 只认「安装版 App 自己」最后一次启动之后的记录：
+  #   · 不这样做会把上一次会话的旧记录当成本次证据
+  #   · 开发构建从终端启动会继承终端授权，混进来会得出假绿
+  START=$(awk -v app="${APP}/" '
+    /^\[.*\] ===== 启动 =====$/ { start = NR }
+    /参数=/ && index($0, app) > 0 { last = start }
+    END { print last + 0 }
+  ' "$LOG")
+  if [ "$START" -gt 0 ]; then
+    # 到「下一次启动」为止：后面那些误启动的开发实例（从终端跑、继承终端授权）不算数
+    NEXT=$(awk -v s="$START" 'NR > s && /^\[.*\] ===== 启动 =====$/ { print NR; exit }' "$LOG")
+    if [ -n "$NEXT" ]; then
+      TAIL=$(sed -n "${START},$((NEXT - 1))p" "$LOG")
+    else
+      TAIL=$(tail -n +"$START" "$LOG")
+    fi
+    echo "  （检查 ${APP} 最近一次启动：$(echo "$TAIL" | head -1)，共 $(echo "$TAIL" | grep -c . ) 行）"
+  else
+    TAIL=""
+    echo "  ⚠️ 日志里没有 ${APP} 自己的启动记录（只跑过开发构建？）"
+  fi
 
   if echo "$TAIL" | grep -q "鼠标监听已安装"; then
     ok "辅助功能授权已生效（日志：划词：鼠标监听已安装）"
