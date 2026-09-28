@@ -5,18 +5,18 @@ import AnywhereDoCore
 
 func printAnalysis(_ text: String) {
     let analysis = Analyzer().analyze(text, options: AnalysisOptions(maxLength: 1200, aiEnabled: false))
-    print("类型     : \(analysis.kind.rawValue)（\(analysis.kind.displayName)）")
-    print("摘要     : \(analysis.headline)")
-    print("规模     : \(analysis.charCount) 字符 / \(analysis.lineCount) 行\(analysis.truncated ? "（已截断）" : "")")
+    print(L10n.t("cli.kind", analysis.kind.rawValue, analysis.kind.displayName))
+    print(L10n.t("cli.headline", analysis.headline))
+    print(L10n.t("cli.size", analysis.charCount, analysis.lineCount, analysis.truncated ? L10n.t("cli.truncated") : ""))
     if !analysis.facts.isEmpty {
-        print("事实     :")
+        print(L10n.t("cli.facts"))
         for fact in analysis.facts {
-            print("  · \(fact.label)：\(fact.value)")
+            print("  · \(fact.label): \(fact.value)")
         }
     }
-    print("建议     :")
+    print(L10n.t("cli.suggestions"))
     for (index, suggestion) in analysis.suggestions.enumerated() {
-        let subtitle = suggestion.subtitle.map { "  —— \($0)" } ?? ""
+        let subtitle = suggestion.subtitle.map { L10n.t("cli.subtitleSeparator", $0) } ?? ""
         print("  \(index + 1). \(suggestion.title)\(subtitle)")
     }
 }
@@ -24,20 +24,7 @@ func printAnalysis(_ text: String) {
 let arguments = CommandLine.arguments
 
 if arguments.contains("--help") || arguments.contains("-h") {
-    print("""
-    AnywhereDo —— macOS 复制即建议
-
-      AnywhereDo                        启动菜单栏应用
-      AnywhereDo --analyze "文本"       只做一次分析并打印结果（调试用）
-      AnywhereDo --analyze -            从 stdin 读取内容再分析
-      AnywhereDo --check-update         检查 GitHub 上是否有新版本
-      AnywhereDo --strings              打印多语言解析结果（调试用）
-      AnywhereDo --accessibility        打印辅助功能授权状态
-      AnywhereDo --selection            打印当前聚焦 App 里选中的文字（验证划词）
-      AnywhereDo --copy-probe           在终端里验证「合成 ⌘C + 还原剪贴板」兜底
-      AnywhereDo --version              打印版本
-      AnywhereDo --settings             启动并直接打开设置窗口
-    """)
+    print(L10n.t("cli.help"))
     exit(0)
 }
 
@@ -58,9 +45,9 @@ if let index = arguments.firstIndex(of: "--analyze") {
 }
 
 if arguments.contains("--strings") {
-    print("系统偏好语言 : \(Locale.preferredLanguages.joined(separator: ", "))")
-    print("资源提供语言 : \(L10n.supportedLanguages.joined(separator: ", "))")
-    print("当前生效语言 : \(L10n.language)")
+    print(L10n.t("cli.preferredLanguages", Locale.preferredLanguages.joined(separator: ", ")))
+    print(L10n.t("cli.bundledLanguages", L10n.supportedLanguages.joined(separator: ", ")))
+    print(L10n.t("cli.activeLanguage", L10n.language))
     for key in ["kind.url", "kind.color", "ai.summarize", "transform.jsonPretty.title"] {
         print("  \(key) = \(L10n.t(key))")
     }
@@ -80,16 +67,16 @@ if arguments.contains("--check-update") {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
     }
     guard finished else {
-        print("检查更新超时（网络不可达？）")
+        print(L10n.t("cli.updateTimeout"))
         exit(2)
     }
-    print("当前版本：\(AnywhereDoVersion.marketing)")
+    print(L10n.t("cli.currentVersion", AnywhereDoVersion.marketing))
     if let info {
-        print("有新版本：\(info.version)")
-        print("下载页：\(info.url.absoluteString)")
+        print(L10n.t("cli.newVersion", info.version))
+        print(L10n.t("cli.downloadPage", info.url.absoluteString))
         exit(0)
     } else {
-        print("已是最新")
+        print(L10n.t("cli.upToDate"))
         exit(0)
     }
 }
@@ -97,8 +84,8 @@ if arguments.contains("--check-update") {
 if arguments.contains("--accessibility") {
     let trusted = SelectionWatcher.isTrusted
     let line = trusted
-        ? "辅助功能权限：已授予，划词可用"
-        : "辅助功能权限：未授予（系统设置 → 隐私与安全性 → 辅助功能 里勾选本 App）"
+        ? L10n.t("cli.accessibilityGranted")
+        : L10n.t("cli.accessibilityDenied")
     Diagnostics.section("--accessibility")
     Diagnostics.log(line + " path=" + Bundle.main.bundlePath)
     print(line)
@@ -107,19 +94,19 @@ if arguments.contains("--accessibility") {
 
 if arguments.contains("--selection") {
     guard SelectionWatcher.isTrusted else {
-        print("没有辅助功能权限，读不到选区。可执行 --accessibility 查看状态。")
+        print(L10n.t("cli.selectionNoPermission"))
         exit(2)
     }
     if let app = NSWorkspace.shared.frontmostApplication {
-        print("焦点 App：\(app.localizedName ?? "未知")")
+        print(L10n.t("cli.focusedApp", app.localizedName ?? L10n.t("cli.unknownApp")))
     }
     if let text = Accessibility.currentSelectionText(), !text.isEmpty {
         Diagnostics.log("--selection：读到 \(text.count) 字，焦点 App=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "?")")
-        print("选区文本（\(text.count) 字）：")
+        print(L10n.t("cli.selectionText", text.count))
         print(text)
     } else {
         Diagnostics.log("--selection：没有读到选区，焦点 App=\(NSWorkspace.shared.frontmostApplication?.localizedName ?? "?")")
-        print("当前没有选中文字（先选中一段文字再运行）。")
+        print(L10n.t("cli.noSelection"))
     }
     exit(0)
 }
@@ -129,18 +116,18 @@ if arguments.contains("--copy-probe") {
     let beforeCount = NSPasteboard.general.changeCount
     Diagnostics.section("--copy-probe")
     Diagnostics.log("原剪贴板 长度=\(before.count)")
-    print("原剪贴板长度：\(before.count)")
+    print(L10n.t("cli.clipboardBefore", before.count))
     if let result = CopyFallback.copySelection() {
         Diagnostics.log("兜底取到 长度=\(result.text.count) 已还原=\(result.restored ? "是" : "否")")
-        print("复制到 \(result.text.count) 字：")
+        print(L10n.t("cli.copiedText", result.text.count))
         print(result.text)
-        print("已还原：\(result.restored ? "是" : "否")")
+        print(L10n.t("cli.restored", result.restored ? L10n.t("cli.yes") : L10n.t("cli.no")))
     } else {
         Diagnostics.log("兜底没有复制到内容")
-        print("没有复制到内容（剪贴板未改动）。先在前台 App 里选中一段文字再试。")
+        print(L10n.t("cli.copyProbeEmpty"))
     }
     let after = NSPasteboard.general.string(forType: .string) ?? ""
-    print("现剪贴板长度：\(after.count)（应与原剪贴板一致） 变化次数=+\(NSPasteboard.general.changeCount - beforeCount)")
+    print(L10n.t("cli.clipboardAfter", after.count, NSPasteboard.general.changeCount - beforeCount))
     exit(0)
 }
 

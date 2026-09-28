@@ -80,7 +80,7 @@ class CardView: NSVisualEffectView {
         ])
     }
 
-    required init?(coder: NSCoder) { fatalError("不支持从 nib 初始化") }
+    required init?(coder: NSCoder) { fatalError(L10n.t("card.nibUnsupported")) }
 
     /// 让一行占满内容宽度。
     @discardableResult
@@ -173,7 +173,7 @@ final class SuggestionCardView: CardView {
         titleStack.translatesAutoresizingMaskIntoConstraints = false
 
         let kindLabel = makeLabel(analysis.kind.displayName, font: .systemFont(ofSize: 13, weight: .semibold), color: .labelColor)
-        let detail = analysis.headline + (sourceApp.map { " · 来自 \($0)" } ?? "")
+        let detail = analysis.headline + (sourceApp.map { L10n.t("card.sourceAppSuffix", $0) } ?? "")
         let detailLabel = makeLabel(detail, font: .systemFont(ofSize: 11), color: .secondaryLabelColor)
         titleStack.addArrangedSubview(kindLabel)
         titleStack.addArrangedSubview(detailLabel)
@@ -300,9 +300,9 @@ final class SuggestionCardView: CardView {
     }
 
     private func buildFooter(analysis: ClipboardAnalysis) {
-        var hint = analysis.suggestions.isEmpty ? "没有可用建议" : "1-9 选择 · Esc 关闭 · 点击别处关闭"
+        var hint = analysis.suggestions.isEmpty ? L10n.t("card.noSuggestions") : L10n.t("card.keyboardHint")
         if analysis.truncated {
-            hint += " · 内容已截断（共 \(analysis.charCount) 字符）"
+            hint += L10n.t("card.truncatedSuffix", analysis.charCount)
         }
         let label = makeLabel(hint, font: .systemFont(ofSize: 10), color: .tertiaryLabelColor)
         addFullWidth(label)
@@ -310,7 +310,7 @@ final class SuggestionCardView: CardView {
 
     private func buildExpandRow(hidden: Int) {
         let button = NSButton(
-            title: "展开剩余 \(hidden) 条建议",
+            title: L10n.t("card.expand", hidden),
             target: self,
             action: #selector(expandTapped)
         )
@@ -391,14 +391,14 @@ final class ResultCardView: CardView {
         addFullWidth(scroll)
         scroll.heightAnchor.constraint(equalToConstant: min(280, max(120, CGFloat(body.count) / 3 + 40))).isActive = true
 
-        let copyButton = NSButton(title: "复制结果", target: self, action: #selector(copyTapped))
+        let copyButton = NSButton(title: L10n.t("card.copyResult"), target: self, action: #selector(copyTapped))
         copyButton.bezelStyle = .rounded
         copyButton.keyEquivalent = "\r"
-        let backButton = NSButton(title: "返回", target: self, action: #selector(backTapped))
+        let backButton = NSButton(title: L10n.t("card.back"), target: self, action: #selector(backTapped))
         backButton.bezelStyle = .rounded
         let spacer = NSView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        let escHint = makeLabel("Esc 关闭", font: .systemFont(ofSize: 10), color: .tertiaryLabelColor)
+        let escHint = makeLabel(L10n.t("card.escHint"), font: .systemFont(ofSize: 10), color: .tertiaryLabelColor)
         let actions = NSStackView(views: [escHint, spacer, backButton, copyButton])
         actions.orientation = .horizontal
         actions.alignment = .centerY

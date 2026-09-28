@@ -32,10 +32,10 @@ final class AIClient {
 
     private func request(system: String, user: String) async throws -> String {
         guard config.isUsable else {
-            throw AIRequestError(message: "尚未配置 AI：请在「设置 → AI」里填写 Base URL、模型与 API Key。")
+            throw AIRequestError(message: L10n.t("ai.error.notConfigured"))
         }
         guard let endpoint else {
-            throw AIRequestError(message: "Base URL 不合法：\(config.baseURL)")
+            throw AIRequestError(message: L10n.t("ai.error.badBaseURL", config.baseURL))
         }
 
         var request = URLRequest(url: endpoint)
@@ -56,7 +56,7 @@ final class AIClient {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw AIRequestError(message: "没有收到有效的 HTTP 响应")
+            throw AIRequestError(message: L10n.t("ai.error.noHTTPResponse"))
         }
         guard (200..<300).contains(http.statusCode) else {
             let detail = String(data: data, encoding: .utf8) ?? ""
@@ -67,11 +67,11 @@ final class AIClient {
               let message = choices.first?["message"] as? [String: Any],
               let text = message["content"] as? String else {
             let raw = String(data: data, encoding: .utf8) ?? ""
-            throw AIRequestError(message: "无法解析模型响应：\(String(raw.prefix(300)))")
+            throw AIRequestError(message: L10n.t("ai.error.unparsableResponse", String(raw.prefix(300))))
         }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            throw AIRequestError(message: "模型返回了空内容")
+            throw AIRequestError(message: L10n.t("ai.error.emptyResponse"))
         }
         return trimmed
     }
