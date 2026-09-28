@@ -295,3 +295,8 @@
 "settings.testUser" = "只回复两个字：可用";
 "settings.testSuccess" = "连接成功：%@";
 "settings.testFailed" = "失败：%@";
+"settings.ignoredAppsAdd" = "＋ 从正在运行的 App 挑选…";
+"settings.ignoredAppsEmpty" = "（没有忽略任何 App）";
+"settings.ignoredAppsMenuTitle" = "选择要忽略的 App";
+"settings.ignoredAppsPlaceholder" = "也可手动输入 bundle id，逗号分隔";
+"settings.ignoredAppsRemove" = "移除";

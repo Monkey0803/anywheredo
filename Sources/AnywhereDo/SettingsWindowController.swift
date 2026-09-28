@@ -27,6 +27,7 @@ final class SettingsWindowController: NSWindowController {
     private let launchAtLoginCheckbox = NSButton(checkboxWithTitle: L10n.t("settings.launchAtLogin"), target: nil, action: nil)
     private let checkUpdatesCheckbox = NSButton(checkboxWithTitle: L10n.t("settings.checkUpdates"), target: nil, action: nil)
     private let ignoredAppsField = NSTextField(string: "")
+    private let ignoredAppsStack = NSStackView()
 
     // AI
     private let aiEnabledCheckbox = NSButton(checkboxWithTitle: L10n.t("settings.aiEnabled"), target: nil, action: nil)
@@ -137,11 +138,29 @@ final class SettingsWindowController: NSWindowController {
 
         wire(sensitiveCheckbox)
         stack.addArrangedSubview(sensitiveCheckbox)
-        ignoredAppsField.placeholderString = "com.example.app, com.other.app"
+        // 忽略的 App：可视化列表 + 从正在运行的 App 里挑选，手输作为兜底
+        ignoredAppsStack.orientation = .vertical
+        ignoredAppsStack.alignment = .leading
+        ignoredAppsStack.spacing = 3
+        let ignoredAppsBox = NSStackView()
+        ignoredAppsBox.orientation = .vertical
+        ignoredAppsBox.alignment = .leading
+        ignoredAppsBox.spacing = 6
+        ignoredAppsBox.addArrangedSubview(ignoredAppsStack)
+        let pickAppButton = NSButton(
+            title: L10n.t("settings.ignoredAppsAdd"),
+            target: self,
+            action: #selector(pickRunningApp(_:))
+        )
+        pickAppButton.bezelStyle = .rounded
+        ignoredAppsBox.addArrangedSubview(pickAppButton)
+        ignoredAppsField.placeholderString = L10n.t("settings.ignoredAppsPlaceholder")
         ignoredAppsField.target = self
         ignoredAppsField.action = #selector(generalChanged)
+        ignoredAppsField.widthAnchor.constraint(greaterThanOrEqualToConstant: 320).isActive = true
+        ignoredAppsBox.addArrangedSubview(ignoredAppsField)
         stack.addArrangedSubview(grid(rows: [
-            (L10n.t("settings.ignoredAppsLabel"), ignoredAppsField),
+            (L10n.t("settings.ignoredAppsLabel"), ignoredAppsBox),
         ]))
         wire(launchAtLoginCheckbox)
         stack.addArrangedSubview(launchAtLoginCheckbox)
@@ -275,6 +294,7 @@ final class SettingsWindowController: NSWindowController {
             maxLengthPopup.selectItem(at: 1)
         }
         ignoredAppsField.stringValue = settings.ignoredBundleIDs.joined(separator: ", ")
+        rebuildIgnoredAppsList()
 
         aiEnabledCheckbox.state = settings.ai.enabled ? .on : .off
         aiBaseURLField.stringValue = settings.ai.baseURL
@@ -330,6 +350,77 @@ final class SettingsWindowController: NSWindowController {
         }
         applyLaunchAtLogin()
         refreshAccessibilityStatus()
+    }
+
+    /// 用列表把「忽略的 App」显示出来：显示 App 名字，鼠标点得到移除按钮。
+    private func rebuildIgnoredAppsList() {
+        for view in ignoredAppsStack.arrangedSubviews {
+            ignoredAppsStack.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+        let ids = store.settings.ignoredBundleIDs
+        guard !ids.isEmpty else {
+            let empty = NSTextField(labelWithString: L10n.t("settings.ignoredAppsEmpty"))
+            empty.font = .systemFont(ofSize: 11)
+            empty.textColor = .tertiaryLabelColor
+            ignoredAppsStack.addArrangedSubview(empty)
+            return
+        }
+        for id in ids {
+            let name = NSWorkspace.shared
+                .urlForApplication(withBundleIdentifier: id)?
+                .deletingPathExtension().lastPathComponent
+            let label = NSTextField(labelWithString: name.map { "\($0)  ·  \(id)" } ?? id)
+            label.font = .systemFont(ofSize: 12)
+            let remove = NSButton(title: "−", target: self, action: #selector(removeIgnoredApp(_:)))
+            remove.isBordered = false
+            remove.setButtonType(.momentaryPushIn)
+            remove.toolTip = L10n.t("settings.ignoredAppsRemove")
+            remove.identifier = NSUserInterfaceItemIdentifier(id)
+            let row = NSStackView(views: [label, remove])
+            row.spacing = 6
+            ignoredAppsStack.addArrangedSubview(row)
+        }
+    }
+
+    @objc private func removeIgnoredApp(_ sender: NSButton) {
+        guard let id = sender.identifier?.rawValue else { return }
+        store.update { $0.ignoredBundleIDs.removeAll { $0 == id } }
+        ignoredAppsField.stringValue = store.settings.ignoredBundleIDs.joined(separator: ", ")
+        rebuildIgnoredAppsList()
+    }
+
+    /// 弹出运行中的 App 列表（只列常规 App，排除自己）。
+    @objc private func pickRunningApp(_ sender: NSButton) {
+        let own = Bundle.main.bundleIdentifier
+        let running = NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .filter { $0.bundleIdentifier != nil && $0.bundleIdentifier != own }
+            .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+
+        let menu = NSMenu()
+        menu.addItem(withTitle: L10n.t("settings.ignoredAppsMenuTitle"), action: nil, keyEquivalent: "")
+        menu.addItem(.separator())
+        let ignored = Set(store.settings.ignoredBundleIDs)
+        for app in running {
+            guard let id = app.bundleIdentifier else { continue }
+            let title = "\(app.localizedName ?? id)  ·  \(id)" + (ignored.contains(id) ? "  ✓" : "")
+            let item = NSMenuItem(title: title, action: #selector(addIgnoredApp(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = id
+            menu.addItem(item)
+        }
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+    }
+
+    @objc private func addIgnoredApp(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        var ids = store.settings.ignoredBundleIDs
+        guard !ids.contains(id) else { return }
+        ids.append(id)
+        store.update { $0.ignoredBundleIDs = ids }
+        ignoredAppsField.stringValue = ids.joined(separator: ", ")
+        rebuildIgnoredAppsList()
     }
 
     @objc private func requestAccessibility() {

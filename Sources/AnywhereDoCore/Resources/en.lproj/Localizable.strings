@@ -295,3 +295,8 @@
 "settings.testUser" = "Reply with one word: ok";
 "settings.testSuccess" = "Connected: %@";
 "settings.testFailed" = "Failed: %@";
+"settings.ignoredAppsAdd" = "+ Pick a running app…";
+"settings.ignoredAppsEmpty" = "(no ignored apps)";
+"settings.ignoredAppsMenuTitle" = "Choose an app to ignore";
+"settings.ignoredAppsPlaceholder" = "or type bundle ids manually, comma-separated";
+"settings.ignoredAppsRemove" = "Remove";
