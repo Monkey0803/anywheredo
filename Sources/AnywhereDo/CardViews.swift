@@ -536,6 +536,13 @@ final class HoverIconView: CardView {
         trackingArea = area
     }
 
+    /// 面板（已显示）是否盖住了当前鼠标位置。
+    /// 拖拽结束时鼠标常常就停在选区旁边，这种情况要直接展开，等不到 mouseEntered。
+    var isCoveringMouse: Bool {
+        guard let window, window.isVisible else { return false }
+        return window.frame.insetBy(dx: -6, dy: -6).contains(NSEvent.mouseLocation)
+    }
+
     override func mouseEntered(with event: NSEvent) {
         onExpand?()
     }

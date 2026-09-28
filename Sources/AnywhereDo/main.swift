@@ -99,6 +99,68 @@ if let index = arguments.firstIndex(of: "--render-hover") {
     exit(0)
 }
 
+if arguments.contains("--anchor-check") {
+    // 验证迷你面板（26pt 小图标）与普通卡片在「多屏 + 屏幕四角」下的落点：
+    // 必须完整落在锚点所在屏的可见区域内，且不能跑到别的屏上去。
+    let app = NSApplication.shared
+    app.setActivationPolicy(.accessory)
+    app.finishLaunching()
+    let popup = PopupController()
+    var failures = 0
+    var cases = 0
+
+    for (screenIndex, screen) in NSScreen.screens.enumerated() {
+        let visible = screen.visibleFrame
+        let inset: CGFloat = 4
+        let points: [(String, NSPoint)] = [
+            ("左下角", NSPoint(x: visible.minX + inset, y: visible.minY + inset)),
+            ("右下角", NSPoint(x: visible.maxX - inset, y: visible.minY + inset)),
+            ("左上角", NSPoint(x: visible.minX + inset, y: visible.maxY - inset)),
+            ("右上角", NSPoint(x: visible.maxX - inset, y: visible.maxY - inset)),
+            ("中心", NSPoint(x: visible.midX, y: visible.midY)),
+            ("顶边中点", NSPoint(x: visible.midX, y: visible.maxY - inset)),
+            ("底边中点", NSPoint(x: visible.midX, y: visible.minY + inset)),
+        ]
+        let rects: [(String, NSRect)] = [
+            ("选区贴底", NSRect(x: visible.midX - 80, y: visible.minY + inset, width: 160, height: 20)),
+            ("选区贴顶", NSRect(x: visible.midX - 80, y: visible.maxY - inset - 20, width: 160, height: 20)),
+            ("选区贴右", NSRect(x: visible.maxX - inset - 160, y: visible.midY, width: 160, height: 20)),
+        ]
+
+        for (variant, makeView) in [
+            ("小图标", { HoverIconView(symbol: "sparkles") as CardView }),
+            ("整卡", { CardView() }),
+        ] {
+            func check(_ label: String, _ anchor: PopupAnchor, _ probe: NSPoint) {
+                cases += 1
+                let view = makeView()
+                popup.showCard(view, anchor: anchor, dismissAfter: nil)
+                guard let frame = view.window?.frame else {
+                    print("❌ 屏幕\(screenIndex + 1) \(variant) \(label)：面板没出来")
+                    failures += 1
+                    return
+                }
+                let inside = visible.insetBy(dx: 7.5, dy: 7.5).contains(frame)
+                let distance = hypot(frame.midX - probe.x, frame.midY - probe.y)
+                let near = distance < 900
+                let ok = inside && near
+                if !ok { failures += 1 }
+                let size = "\(Int(frame.width))x\(Int(frame.height))"
+                print("\(ok ? "✅" : "❌") 屏幕\(screenIndex + 1) \(variant) \(label)：面板 \(size) 落点=(\(Int(frame.origin.x)),\(Int(frame.origin.y))) 距锚点 \(Int(distance))px\(inside ? "" : " ⚠️越界")\(near ? "" : " ⚠️过远")")
+            }
+            for (label, point) in points {
+                check(label, .point(point), point)
+            }
+            for (label, rect) in rects {
+                check(label, .selection(rect), NSPoint(x: rect.midX, y: rect.midY))
+            }
+        }
+    }
+    popup.close()
+    print("\n共 \(cases) 个用例，失败 \(failures) 个")
+    exit(failures == 0 ? 0 : 2)
+}
+
 if arguments.contains("--hover-demo") {
     // 验证「悬停展开」这条链路：先直接调回调（验证接线），再合成鼠标移动（验证系统投递）。
     let app = NSApplication.shared
@@ -119,6 +181,20 @@ if arguments.contains("--hover-demo") {
     print("小图标面板：\(Int(frame.width))x\(Int(frame.height))，位置=(\(Int(frame.origin.x)),\(Int(frame.origin.y)))")
     let areas = icon.trackingAreas
     print("追踪区域：\(areas.count) 个" + (areas.first.map { "，范围=\(Int($0.rect.width))x\(Int($0.rect.height))" } ?? ""))
+
+    // 自动展开分支（轮询判定用的就是这个属性）：把图标正好摆在鼠标正下方应为 true，挪远处应为 false。
+    let mouseNow = NSEvent.mouseLocation
+    let covering = HoverIconView(symbol: "sparkles")
+    popup.showCard(covering, anchor: .point(NSPoint(x: mouseNow.x - 20, y: mouseNow.y + 20)), dismissAfter: nil)
+    let overMouse = covering.isCoveringMouse
+    popup.showCard(icon, anchor: .point(NSPoint(x: NSEvent.mouseLocation.x + 60, y: NSEvent.mouseLocation.y)), dismissAfter: nil)
+    print(overMouse ? "✅ 图标正好在鼠标下时 isCoveringMouse=true（轮询据此自动展开）"
+                    : "❌ 图标在鼠标下却判成 false")
+    let far = HoverIconView(symbol: "sparkles")
+    popup.showCard(far, anchor: .point(NSPoint(x: NSEvent.mouseLocation.x - 400, y: NSEvent.mouseLocation.y - 300)), dismissAfter: nil)
+    let farCover = far.isCoveringMouse
+    print(farCover ? "❌ 远处的图标却判成覆盖鼠标" : "✅ 图标在 400px 外时 isCoveringMouse=false")
+    popup.showCard(icon, anchor: .point(NSPoint(x: NSEvent.mouseLocation.x + 60, y: NSEvent.mouseLocation.y)), dismissAfter: nil)
 
     if let enter = NSEvent.enterExitEvent(
         with: .mouseEntered,
@@ -175,14 +251,15 @@ if arguments.contains("--hover-demo") {
         if delivered {
             print("✅ 系统投递生效：合成鼠标扫入图标触发了 mouseEntered")
         } else {
-            print("⚠️ 系统没有投递 mouseEntered。本进程也无法用合成事件移动光标（warp 与 mouseMoved 都无效），")
-            print("   所以「真实鼠标进入」这一段在终端里验不了 —— 请在应用里用鼠标悬停一次确认。")
+            print("⚠️ 系统没有向面板投递 mouseEntered（光标确实被移到了图标中心，所以不是坐标问题）。")
+            print("   这正是 AppDelegate 里额外加轮询兜底的原因：轮询只看鼠标位置，不依赖进入事件。")
         }
     } else {
         print("⚠️ 没能构造合成鼠标事件")
     }
     popup.close()
-    exit(wired ? 0 : 2)
+    let branchesOK = wired && overMouse && !farCover
+    exit(branchesOK ? 0 : 2)
 }
 
 if arguments.contains("--check-update") {

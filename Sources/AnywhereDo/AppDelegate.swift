@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastAnchor: PopupAnchor = .point(.zero)
     /// 「划词」和「复制」可能对同一段文字各触发一次，短时间内去重。
     private var lastTrigger: (text: String, date: Date)?
+    /// 悬停小图标期间用来判断「鼠标是否已停在图标上」的轮询计时器。
+    private var hoverPollTimer: Timer?
     /// 检查更新发现的可用新版本（nil = 已是最新或还没查到）。
     private var availableUpdate: UpdateInfo?
     private var recent: [(text: String, analysis: ClipboardAnalysis)] = []
@@ -339,6 +341,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let hint = HoverIconView(symbol: analysis.suggestions.first?.symbol ?? "sparkles")
             hint.onExpand = { [weak self] in
                 guard let self else { return }
+                self.stopHoverPolling()
                 Diagnostics.log("划词：悬停/点击小图标，展开卡片")
                 self.present(analysis: analysis, sourceApp: sourceApp, anchor: anchor, compact: compact)
             }
@@ -347,7 +350,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 ? max(store.settings.autoDismissSeconds, 8)
                 : nil
             popup.showCard(hint, anchor: anchor, dismissAfter: delay)
-            expandHintIfMouseAlreadyInside(hint)
+            startHoverPolling(hint)
             return
         }
 
@@ -368,17 +371,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         popup.showCard(card, anchor: anchor, dismissAfter: delay)
     }
 
-    /// 拖拽结束的位置常常就在选区旁边：如果鼠标已经压在小图标上，就自动展开
-    /// （NSTrackingArea 的 mouseEntered 只在「移入」时触发，鼠标本来就在里面时不会触发）。
-    private func expandHintIfMouseAlreadyInside(_ hint: HoverIconView) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak hint] in
-            guard let hint,
-                  let window = hint.window,
-                  window.isVisible,
-                  window.frame.insetBy(dx: -6, dy: -6).contains(NSEvent.mouseLocation) else { return }
-            Diagnostics.log("划词：鼠标已停在小图标上，直接展开")
+    /// 小图标显示期间轮询「鼠标是不是已经在图标上」。
+    ///
+    /// 为什么不只靠 `NSTrackingArea`：它的 `mouseEntered` 只在「移入」那一刻触发，
+    /// 拖拽结束时鼠标本来就在附近就不会触发；而且实测在非激活面板上，
+    /// 系统未必稳定投递进入事件（见 `--hover-demo`）。轮询只用 `NSEvent.mouseLocation`，
+    /// 两条路都留着，悬停才真的可靠。
+    private func startHoverPolling(_ hint: HoverIconView) {
+        stopHoverPolling()
+        hoverPollTimer = Timer.scheduledTimer(withTimeInterval: 0.12, repeats: true) { [weak self, weak hint] _ in
+            guard let self, let hint, self.popup.isVisible else {
+                self?.stopHoverPolling()
+                return
+            }
+            guard hint.isCoveringMouse else { return }
+            self.stopHoverPolling()
+            Diagnostics.log("划词：鼠标已在图标上（轮询判定），展开卡片")
             hint.onExpand?()
         }
+    }
+
+    private func stopHoverPolling() {
+        hoverPollTimer?.invalidate()
+        hoverPollTimer = nil
     }
 
     // MARK: - 执行建议
