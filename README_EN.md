@@ -191,10 +191,14 @@ In this order — it usually nails it in one pass:
    | `⌘C 兜底：xxx 取到 长度=41 已还原=是` | fallback worked, clipboard restored |
    | `⌘C 兜底：跳过（焦点在安全输入框）` | password field — skipped by design |
 
-3. Command-line self-check (run in a terminal; prints the same information):
+3. Command-line self-check (run in a terminal; prints the same information).
+   **Careful with `--accessibility`:** TCC attributes the decision to the "responsible process", and a
+   process launched from a terminal inherits the terminal's (or its parent's) grant — so it can report
+   granted while the app itself is not. **For the app's own state use the in-app "Self-check: read the
+   current selection" menu item, or the `权限=` line in the diagnostics log.**
 
    ```bash
-   .build/release/AnywhereDo --accessibility
+   .build/release/AnywhereDo --accessibility   # note: run from a terminal it may inherit the terminal's grant
    .build/release/AnywhereDo --selection
    .build/release/AnywhereDo --copy-probe   # verifies "synthesize ⌘C + restore clipboard"
    .build/release/AnywhereDo --check-update # ask GitHub whether a newer release exists

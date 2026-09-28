@@ -303,3 +303,4 @@
 "settings.modifierInstant" = "按住 ⌘/⌥ 划词时直接执行第一条建议（不弹卡片，也不会调用 AI）";
 "settings.hoverIcon" = "划词后先显示小图标，悬停或点击才展开卡片（打扰最小）";
 "hover.tooltip" = "悬停展开建议";
+"cli.accessibilityCaveat" = "（注意：从终端运行时会继承终端或父进程的授权，这个结果可能和 App 自身不一致；判断 App 自身状态请用菜单里的「自检：读取当前选区」，或看诊断日志里的「权限=」行。）";

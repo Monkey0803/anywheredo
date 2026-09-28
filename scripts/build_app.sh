@@ -63,7 +63,7 @@ if [ -d "$CORE_BUNDLE" ]; then
   echo "==> 拷入本地化资源：$(basename "$CORE_BUNDLE")"
   cp -R "$CORE_BUNDLE" "$APP/Contents/Resources/"
 else
-  echo "警告：找不到 $CORE_BUNDLE，App 内的文案将只有回退语言" >&2
+  echo "警告：找不到 ${CORE_BUNDLE}，App 内的文案将只有回退语言" >&2
 fi
 true
 

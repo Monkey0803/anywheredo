@@ -178,10 +178,13 @@ App 图标（`Resources/AppIcon.icns`）和菜单栏图标已经生成好了，�
    | `⌘C 兜底：跳过（焦点在安全输入框）` | 密码框，按设计不处理 |
    | `⌘C 兜底：xxx 没有复制到内容` | 该 App 忽略合成按键，或当时确实没有选中内容 |
 
-3. 命令行自检（在终端里跑，会打印同一批信息）：
+3. 命令行自检（在终端里跑，会打印同一批信息）。
+   **注意 `--accessibility` 的结论可能被终端「继承」**：TCC 按「负责任进程」判定，从终端启动的进程会
+   继承终端（或其父进程）的授权，所以它可能显示已授予、而 App 自己仍未授权。**要判断 App 自身状态，
+   请用菜单里的「自检：读取当前选区」，或看诊断日志里的 `权限=` 行。**
 
    ```bash
-   .build/release/AnywhereDo --accessibility
+   .build/release/AnywhereDo --accessibility   # 注意：从终端跑会继承终端的授权，未必等于 App 自身状态
    .build/release/AnywhereDo --selection
    .build/release/AnywhereDo --copy-probe   # 验证「合成 ⌘C + 还原剪贴板」
    .build/release/AnywhereDo --check-update # 检查 GitHub 上是否有新版本

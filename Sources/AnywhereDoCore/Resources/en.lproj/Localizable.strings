@@ -303,3 +303,4 @@
 "settings.modifierInstant" = "Holding ⌘/⌥ while selecting runs the first suggestion directly (no card, no AI call)";
 "settings.hoverIcon" = "Show a small icon after selecting; hover or click to expand the card";
 "hover.tooltip" = "Hover to expand suggestions";
+"cli.accessibilityCaveat" = "(Note: run from a terminal, the grant may be inherited from the terminal or its parent, so this result can disagree with the app's own state. Use the in-app \"Self-check: read the current selection\" menu item, or the \"权限=\" line in the diagnostics log.)";

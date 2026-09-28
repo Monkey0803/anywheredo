@@ -297,6 +297,11 @@ if arguments.contains("--accessibility") {
     Diagnostics.section("--accessibility")
     Diagnostics.log(line + " path=" + Bundle.main.bundlePath)
     print(line)
+    // 从终端运行时，TCC 的「负责任进程」是终端（或其父进程），授权可能被继承，
+    // 结论会和 App 自身不一致——必须说清楚，否则用户会以为 App 已经能划词。
+    if ProcessInfo.processInfo.environment["TERM"] != nil {
+        print(L10n.t("cli.accessibilityCaveat"))
+    }
     exit(0)
 }
 
