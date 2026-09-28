@@ -309,6 +309,35 @@ final class LocalizationTests: XCTestCase {
     }
 }
 
+final class IgnoredAppsTests: XCTestCase {
+    func testParseHandlesBothCommasAndBlanks() {
+        XCTAssertEqual(IgnoredApps.parse("com.a.app, com.b.app"), ["com.a.app", "com.b.app"])
+        XCTAssertEqual(IgnoredApps.parse("com.a.app，com.b.app"), ["com.a.app", "com.b.app"], "中文逗号也要认")
+        XCTAssertEqual(IgnoredApps.parse("  com.a.app ,, com.a.app , "), ["com.a.app"], "去空白并去重")
+        XCTAssertEqual(IgnoredApps.parse(""), [])
+        XCTAssertEqual(IgnoredApps.parse(" , ， "), [])
+    }
+
+    func testAddingIsIdempotent() {
+        XCTAssertEqual(IgnoredApps.adding("com.b.app", to: ["com.a.app"]), ["com.a.app", "com.b.app"])
+        XCTAssertEqual(IgnoredApps.adding("com.a.app", to: ["com.a.app"]), ["com.a.app"], "重复添加不应产生第二项")
+        XCTAssertEqual(IgnoredApps.adding("  ", to: ["com.a.app"]), ["com.a.app"], "空白不应入表")
+        XCTAssertEqual(IgnoredApps.adding(" com.b.app ", to: []), ["com.b.app"], "应去掉首尾空白")
+    }
+
+    func testRemovingPreservesOrder() {
+        XCTAssertEqual(IgnoredApps.removing("com.b.app", from: ["com.a.app", "com.b.app", "com.c.app"]),
+                       ["com.a.app", "com.c.app"])
+        XCTAssertEqual(IgnoredApps.removing("com.x.app", from: ["com.a.app"]), ["com.a.app"], "移除不存在的项不应改变列表")
+    }
+
+    func testDisplayRoundTrips() {
+        let list = ["com.a.app", "com.b.app"]
+        XCTAssertEqual(IgnoredApps.parse(IgnoredApps.display(list)), list)
+        XCTAssertEqual(IgnoredApps.display([]), "")
+    }
+}
+
 final class VersionTests: XCTestCase {
     func testDetectsNewerVersion() {
         XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "v1.1.0", than: "1.0.0"))

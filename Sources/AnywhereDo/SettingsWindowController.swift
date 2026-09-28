@@ -297,7 +297,7 @@ final class SettingsWindowController: NSWindowController {
         } else {
             maxLengthPopup.selectItem(at: 1)
         }
-        ignoredAppsField.stringValue = settings.ignoredBundleIDs.joined(separator: ", ")
+        ignoredAppsField.stringValue = IgnoredApps.display(settings.ignoredBundleIDs)
         rebuildIgnoredAppsList()
 
         aiEnabledCheckbox.state = settings.ai.enabled ? .on : .off
@@ -342,10 +342,7 @@ final class SettingsWindowController: NSWindowController {
                maxLengthPopup.indexOfSelectedItem < maxLengthOptions.count {
                 settings.maxContentLength = maxLengthOptions[maxLengthPopup.indexOfSelectedItem]
             }
-            settings.ignoredBundleIDs = ignoredAppsField.stringValue
-                .split(separator: ",")
-                .map { $0.trimmingCharacters(in: .whitespaces) }
-                .filter { !$0.isEmpty }
+            settings.ignoredBundleIDs = IgnoredApps.parse(ignoredAppsField.stringValue)
             settings.launchAtLogin = launchAtLoginCheckbox.state == .on
             settings.checkForUpdates = checkUpdatesCheckbox.state == .on
 
@@ -391,8 +388,8 @@ final class SettingsWindowController: NSWindowController {
 
     @objc private func removeIgnoredApp(_ sender: NSButton) {
         guard let id = sender.identifier?.rawValue else { return }
-        store.update { $0.ignoredBundleIDs.removeAll { $0 == id } }
-        ignoredAppsField.stringValue = store.settings.ignoredBundleIDs.joined(separator: ", ")
+        store.update { $0.ignoredBundleIDs = IgnoredApps.removing(id, from: $0.ignoredBundleIDs) }
+        ignoredAppsField.stringValue = IgnoredApps.display(store.settings.ignoredBundleIDs)
         rebuildIgnoredAppsList()
     }
 
@@ -421,11 +418,8 @@ final class SettingsWindowController: NSWindowController {
 
     @objc private func addIgnoredApp(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
-        var ids = store.settings.ignoredBundleIDs
-        guard !ids.contains(id) else { return }
-        ids.append(id)
-        store.update { $0.ignoredBundleIDs = ids }
-        ignoredAppsField.stringValue = ids.joined(separator: ", ")
+        store.update { $0.ignoredBundleIDs = IgnoredApps.adding(id, to: $0.ignoredBundleIDs) }
+        ignoredAppsField.stringValue = IgnoredApps.display(store.settings.ignoredBundleIDs)
         rebuildIgnoredAppsList()
     }
 
