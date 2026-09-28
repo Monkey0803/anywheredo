@@ -10,11 +10,13 @@ import Foundation
 /// `Bundle.main` 的偏好语言解析会退化成英文，导致中文系统也出英文。
 /// 这里改成「拿系统偏好语言去匹配我们真正提供的语言」，行为可预测、可测。
 public enum L10n {
-    /// 资源里真正打包了哪些语言（来自 bundle 目录下的 *.lproj）。
-    public static var supportedLanguages: [String] {
-        let fromBundle = Bundle.module.localizations.filter { !$0.hasPrefix("Base") }
-        return fromBundle.isEmpty ? ["en", "zh-Hans"] : fromBundle.sorted()
-    }
+    /// 我们**确实**提供了哪些语言，与 `Resources/*.lproj` 目录一一对应。
+    ///
+    /// 刻意不用 `Bundle.localizations` 枚举：不同 SwiftPM/Xcode 版本对本地化资源的处理不一致
+    /// （实测同一个包在 CI runner 上只报 `en`，而 `path(forResource:forLocalization:)` 却能正常取到中文表），
+    /// 那会让「系统是中文还是英文」的判断随工具链漂移。
+    /// 语言文件是否真的打进包里，由 `LocalizationTests` 逐张读表来保证。
+    public static let supportedLanguages = ["en", "zh-Hans"]
 
     /// 当前生效语言：取系统偏好语言里第一个我们能提供的，进行前缀匹配（`zh-Hans-CN` → `zh-Hans`）。
     public static let language: String = resolveLanguage(from: Locale.preferredLanguages)

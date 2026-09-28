@@ -281,6 +281,14 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    /// 声明支持的语言必须有对应的表（防止删了 .lproj 却没人发现）。
+    func testEverySupportedLanguageHasTable() {
+        XCTAssertEqual(L10n.supportedLanguages, ["en", "zh-Hans"])
+        for language in L10n.supportedLanguages {
+            XCTAssertNotNil(L10n.table(for: language), "声明的语言 \(language) 读不到 Localizable.strings")
+        }
+    }
+
     func testLanguageResolution() {
         XCTAssertEqual(L10n.resolveLanguage(from: ["zh-Hans-CN"]), "zh-Hans")
         XCTAssertEqual(L10n.resolveLanguage(from: ["zh-Hans"]), "zh-Hans")
