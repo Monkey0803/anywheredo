@@ -1,0 +1,67 @@
+/* AnywhereDo 中文（简体）文案表
+   与 en.lproj 的 key 必须完全一致——有单测守着（testLocalizationTablesAreInSync）。 */
+
+/* ===== 内容类型（ContentKind.displayName） ===== */
+"kind.empty" = "空内容";
+"kind.url" = "链接";
+"kind.filePath" = "文件路径";
+"kind.json" = "JSON";
+"kind.color" = "颜色";
+"kind.timestamp" = "时间";
+"kind.email" = "邮箱";
+"kind.phoneNumber" = "电话号码";
+"kind.mathExpression" = "算式";
+"kind.base64" = "Base64";
+"kind.code" = "代码";
+"kind.plainText" = "文本";
+
+/* ===== 文本变换（TextTransform.title / resultTitle） ===== */
+"transform.jsonPretty.title" = "格式化 JSON";
+"transform.jsonPretty.result" = "格式化结果";
+"transform.jsonMinify.title" = "压缩成一行";
+"transform.jsonMinify.result" = "压缩结果";
+"transform.base64Decode.title" = "解码 Base64";
+"transform.base64Decode.result" = "解码结果";
+"transform.base64Encode.title" = "编码为 Base64";
+"transform.base64Encode.result" = "编码结果";
+"transform.percentDecode.title" = "URL 解码";
+"transform.percentDecode.result" = "解码结果";
+"transform.percentEncode.title" = "URL 编码";
+"transform.percentEncode.result" = "编码结果";
+"transform.trimWhitespace.title" = "去除首尾空白";
+"transform.trimWhitespace.result" = "处理结果";
+"transform.collapseBlankLines.title" = "合并多余空行";
+"transform.collapseBlankLines.result" = "处理结果";
+"transform.uppercase.title" = "转为大写";
+"transform.uppercase.result" = "大写结果";
+"transform.lowercase.title" = "转为小写";
+"transform.lowercase.result" = "小写结果";
+
+/* ===== 变换错误 ===== */
+"error.notJSON" = "不是合法 JSON：%@";
+"error.notBase64" = "不是合法的 Base64 内容";
+"error.invalidPercentEncoding" = "百分号编码不合法";
+
+/* ===== AI 预设（AIPreset.title） ===== */
+"ai.summarize" = "AI 总结";
+"ai.keyPoints" = "AI 提取要点";
+"ai.translateToChinese" = "AI 翻译成中文";
+"ai.translateToEnglish" = "AI 翻译成英文";
+"ai.polish" = "AI 润色";
+"ai.explainCode" = "AI 解释这段代码";
+"ai.findBugs" = "AI 找 Bug";
+"ai.explainError" = "AI 分析报错";
+"ai.extractTodos" = "AI 提取待办";
+"ai.nameAndTag" = "AI 起标题与标签";
+
+/* ===== AI 系统提示词（随界面语言走） ===== */
+"ai.summarize.prompt" = "你是一个精准的文本摘要助手。用原文的语言输出，先给一句话结论，再给 3 条以内的要点。不要寒暄，不要重复原文。";
+"ai.keyPoints.prompt" = "你是一个信息提炼助手。只输出要点列表（- 开头），每条不超过 25 字，最多 6 条，使用原文语言。";
+"ai.translateToChinese.prompt" = "你是一个专业翻译。把用户内容翻译成地道简体中文，只输出译文，保留代码、命令、专有名词与原有格式。";
+"ai.translateToEnglish.prompt" = "You are a professional translator. Translate the user content into natural English. Output only the translation, preserving code, commands and formatting.";
+"ai.polish.prompt" = "你是一个文字编辑。在不改变原意的前提下润色用户文本，使其更通顺、专业、简洁，只输出润色后的文本。";
+"ai.explainCode.prompt" = "你是一个资深工程师。用简体中文解释用户提供的代码：先一句话说明它做什么，再列出关键步骤，最后指出潜在风险。使用 Markdown。";
+"ai.findBugs.prompt" = "你是一个严格的代码审查者。找出用户代码中的 bug、边界问题和安全隐患，按严重程度排序，给出最小修复建议。使用简体中文与 Markdown。若确实没有明显问题，直接说明。";
+"ai.explainError.prompt" = "你是一个排错专家。根据用户提供的报错或堆栈：解释根因、指出最可能的出错位置、给出按优先级排序的修复步骤。使用简体中文。";
+"ai.extractTodos.prompt" = "你是一个任务整理助手。从用户内容中抽取可执行的待办事项，输出 Markdown 复选框列表（- [ ] ），每条包含负责人或时间（若原文提到）。";
+"ai.nameAndTag.prompt" = "你是一个信息组织助手。为用户的文本拟一个不超过 20 字的标题，并给出 3-5 个标签（#开头），用简体中文，只输出标题和标签两行。";

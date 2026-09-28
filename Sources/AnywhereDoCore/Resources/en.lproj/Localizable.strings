@@ -1,0 +1,67 @@
+/* AnywhereDo English strings.
+   Keys must match zh-Hans.lproj exactly — enforced by testLocalizationTablesAreInSync. */
+
+/* ===== Content kinds ===== */
+"kind.empty" = "Empty";
+"kind.url" = "Link";
+"kind.filePath" = "File path";
+"kind.json" = "JSON";
+"kind.color" = "Color";
+"kind.timestamp" = "Time";
+"kind.email" = "Email";
+"kind.phoneNumber" = "Phone number";
+"kind.mathExpression" = "Expression";
+"kind.base64" = "Base64";
+"kind.code" = "Code";
+"kind.plainText" = "Text";
+
+/* ===== Text transforms ===== */
+"transform.jsonPretty.title" = "Pretty-print JSON";
+"transform.jsonPretty.result" = "Formatted";
+"transform.jsonMinify.title" = "Minify to one line";
+"transform.jsonMinify.result" = "Minified";
+"transform.base64Decode.title" = "Decode Base64";
+"transform.base64Decode.result" = "Decoded";
+"transform.base64Encode.title" = "Encode as Base64";
+"transform.base64Encode.result" = "Encoded";
+"transform.percentDecode.title" = "URL-decode";
+"transform.percentDecode.result" = "Decoded";
+"transform.percentEncode.title" = "URL-encode";
+"transform.percentEncode.result" = "Encoded";
+"transform.trimWhitespace.title" = "Trim whitespace";
+"transform.trimWhitespace.result" = "Result";
+"transform.collapseBlankLines.title" = "Collapse blank lines";
+"transform.collapseBlankLines.result" = "Result";
+"transform.uppercase.title" = "Uppercase";
+"transform.uppercase.result" = "Uppercased";
+"transform.lowercase.title" = "Lowercase";
+"transform.lowercase.result" = "Lowercased";
+
+/* ===== Transform errors ===== */
+"error.notJSON" = "Not valid JSON: %@";
+"error.notBase64" = "Not valid Base64 content";
+"error.invalidPercentEncoding" = "Invalid percent-encoding";
+
+/* ===== AI presets ===== */
+"ai.summarize" = "AI summary";
+"ai.keyPoints" = "AI key points";
+"ai.translateToChinese" = "AI translate to Chinese";
+"ai.translateToEnglish" = "AI translate to English";
+"ai.polish" = "AI polish";
+"ai.explainCode" = "AI explain this code";
+"ai.findBugs" = "AI find bugs";
+"ai.explainError" = "AI analyze this error";
+"ai.extractTodos" = "AI extract todos";
+"ai.nameAndTag" = "AI title and tags";
+
+/* ===== AI 系统提示词（随界面语言走） ===== */
+"ai.summarize.prompt" = "You are a precise summarizer. Answer in the source language: one sentence of conclusion first, then at most three bullet points. No greetings, do not restate the original.";
+"ai.keyPoints.prompt" = "You extract key points. Output only a bullet list starting with '-', at most 6 items, each under 25 words, in the source language.";
+"ai.translateToChinese.prompt" = "You are a professional translator. Translate the user content into natural Simplified Chinese. Output only the translation, preserving code, commands, proper nouns and formatting.";
+"ai.translateToEnglish.prompt" = "You are a professional translator. Translate the user content into natural English. Output only the translation, preserving code, commands and formatting.";
+"ai.polish.prompt" = "You are a copy editor. Polish the user text without changing its meaning: smoother, more professional, more concise. Output only the polished text.";
+"ai.explainCode.prompt" = "You are a senior engineer. Explain the provided code in English: one sentence on what it does, then the key steps, then potential risks. Use Markdown.";
+"ai.findBugs.prompt" = "You are a strict code reviewer. Find bugs, edge cases and security issues in the user code, ordered by severity, with minimal fix suggestions. Use Markdown. If nothing significant is wrong, say so plainly.";
+"ai.explainError.prompt" = "You are a debugging expert. Given the error or stack trace: explain the root cause, point at the most likely location, and give fix steps ordered by priority.";
+"ai.extractTodos.prompt" = "You extract action items. From the user content, output a Markdown checkbox list ('- [ ] '), including owner or due date when mentioned.";
+"ai.nameAndTag.prompt" = "You organize information. Suggest a title under 20 words plus 3-5 hashtags, and output only those two lines.";

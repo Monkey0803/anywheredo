@@ -191,6 +191,48 @@ final class AnalyzerSuggestionTests: XCTestCase {
     }
 }
 
+final class LocalizationTests: XCTestCase {
+    func testTablesHaveIdenticalKeys() {
+        guard let zh = L10n.table(for: "zh-Hans"), let en = L10n.table(for: "en") else {
+            return XCTFail("读不到 Localizable.strings（资源没打进 bundle？）")
+        }
+        XCTAssertGreaterThan(zh.count, 50, "中文表条目太少，可能漏了文件")
+        let missingInEn = Set(zh.keys).subtracting(en.keys)
+        let missingInZh = Set(en.keys).subtracting(zh.keys)
+        XCTAssertTrue(missingInEn.isEmpty, "英文表缺少：\(missingInEn.sorted())")
+        XCTAssertTrue(missingInZh.isEmpty, "中文表缺少：\(missingInZh.sorted())")
+    }
+
+    func testNoEmptyOrPlaceholderTranslations() {
+        for language in ["zh-Hans", "en"] {
+            guard let table = L10n.table(for: language) else { return XCTFail("缺 \(language)") }
+            for (key, value) in table {
+                XCTAssertFalse(value.trimmingCharacters(in: .whitespaces).isEmpty, "\(language) 的 \(key) 是空的")
+                XCTAssertNotEqual(value, key, "\(language) 的 \(key) 没翻译")
+            }
+        }
+    }
+
+    func testLanguageResolution() {
+        XCTAssertEqual(L10n.resolveLanguage(from: ["zh-Hans-CN"]), "zh-Hans")
+        XCTAssertEqual(L10n.resolveLanguage(from: ["zh-Hans"]), "zh-Hans")
+        XCTAssertEqual(L10n.resolveLanguage(from: ["en-US"]), "en")
+        XCTAssertEqual(L10n.resolveLanguage(from: ["ja-JP"]), "en", "不支持的语言应回退到开发语言")
+        XCTAssertEqual(L10n.resolveLanguage(from: ["fr-FR", "zh-Hans-CN"]), "zh-Hans", "应取第一个能提供的")
+        XCTAssertEqual(L10n.resolveLanguage(from: []), "en")
+    }
+
+    func testCurrentLanguageIsSupported() {
+        XCTAssertTrue(L10n.supportedLanguages.contains(L10n.language))
+        XCTAssertTrue(["en", "zh-Hans"].contains(L10n.language))
+    }
+
+    func testSpotChecks() {
+        XCTAssertFalse(L10n.t("kind.url").isEmpty)
+        XCTAssertEqual(L10n.t("error.notJSON", "{oops").contains("{oops"), true, "带参数的文案要能替换 %@")
+    }
+}
+
 final class VersionTests: XCTestCase {
     func testDetectsNewerVersion() {
         XCTAssertTrue(AnywhereDoVersion.isNewer(remote: "v1.1.0", than: "1.0.0"))

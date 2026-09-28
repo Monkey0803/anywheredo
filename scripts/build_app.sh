@@ -55,6 +55,16 @@ fi
 for f in MenuBarIconTemplate.png MenuBarIconTemplate@2x.png; do
   [ -f "Resources/$f" ] && cp "Resources/$f" "$APP/Contents/Resources/$f"
 done
+
+# SwiftPM 生成的本地化资源 bundle（en.lproj / zh-Hans.lproj）
+# 必须在签名之前拷进去，否则会破坏签名封条。
+CORE_BUNDLE="$(dirname "$BIN")/AnywhereDo_AnywhereDoCore.bundle"
+if [ -d "$CORE_BUNDLE" ]; then
+  echo "==> 拷入本地化资源：$(basename "$CORE_BUNDLE")"
+  cp -R "$CORE_BUNDLE" "$APP/Contents/Resources/"
+else
+  echo "警告：找不到 $CORE_BUNDLE，App 内的文案将只有回退语言" >&2
+fi
 true
 
 # ---- 签名 ----

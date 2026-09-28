@@ -16,20 +16,7 @@ public enum ContentKind: String, CaseIterable, Equatable, Sendable {
     case plainText
 
     public var displayName: String {
-        switch self {
-        case .empty: return "空内容"
-        case .url: return "链接"
-        case .filePath: return "文件路径"
-        case .json: return "JSON"
-        case .color: return "颜色"
-        case .timestamp: return "时间"
-        case .email: return "邮箱"
-        case .phoneNumber: return "电话号码"
-        case .mathExpression: return "算式"
-        case .base64: return "Base64"
-        case .code: return "代码"
-        case .plainText: return "文本"
-        }
+        L10n.t("kind.\(rawValue)")
     }
 
     /// SF Symbol 名称（macOS 13+ 均可用）。

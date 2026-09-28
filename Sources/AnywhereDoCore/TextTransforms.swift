@@ -7,9 +7,9 @@ public enum TextTransformError: Error, LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .notJSON(let detail): return "不是合法 JSON：\(detail)"
-        case .notBase64: return "不是合法的 Base64 内容"
-        case .invalidPercentEncoding: return "百分号编码不合法"
+        case .notJSON(let detail): return L10n.t("error.notJSON", detail)
+        case .notBase64: return L10n.t("error.notBase64")
+        case .invalidPercentEncoding: return L10n.t("error.invalidPercentEncoding")
         }
     }
 }
@@ -28,33 +28,11 @@ public enum TextTransform: String, CaseIterable, Equatable, Sendable {
     case lowercase
 
     public var title: String {
-        switch self {
-        case .jsonPretty: return "格式化 JSON"
-        case .jsonMinify: return "压缩成一行"
-        case .base64Decode: return "解码 Base64"
-        case .base64Encode: return "编码为 Base64"
-        case .percentDecode: return "URL 解码"
-        case .percentEncode: return "URL 编码"
-        case .trimWhitespace: return "去除首尾空白"
-        case .collapseBlankLines: return "合并多余空行"
-        case .uppercase: return "转为大写"
-        case .lowercase: return "转为小写"
-        }
+        L10n.t("transform.\(rawValue).title")
     }
 
     public var resultTitle: String {
-        switch self {
-        case .jsonPretty: return "格式化结果"
-        case .jsonMinify: return "压缩结果"
-        case .base64Decode: return "解码结果"
-        case .base64Encode: return "编码结果"
-        case .percentDecode: return "解码结果"
-        case .percentEncode: return "编码结果"
-        case .trimWhitespace: return "处理结果"
-        case .collapseBlankLines: return "处理结果"
-        case .uppercase: return "大写结果"
-        case .lowercase: return "小写结果"
-        }
+        L10n.t("transform.\(rawValue).result")
     }
 
     public static func apply(_ transform: TextTransform, to input: String) -> Result<String, TextTransformError> {

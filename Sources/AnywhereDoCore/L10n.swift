@@ -1,0 +1,63 @@
+import Foundation
+
+/// 多语言入口。
+///
+/// 所有用户可见文案都走这里，Core 与 App 共用同一张表：
+/// `Sources/AnywhereDoCore/Resources/<语言>.lproj/Localizable.strings`。
+///
+/// 为什么不用 `NSLocalizedString(key, bundle: .module)` 的默认解析：
+/// 裸可执行文件（`swift run` / CI 里的 CLI 冒烟测试）没有 Info.plist，
+/// `Bundle.main` 的偏好语言解析会退化成英文，导致中文系统也出英文。
+/// 这里改成「拿系统偏好语言去匹配我们真正提供的语言」，行为可预测、可测。
+public enum L10n {
+    /// 资源里真正打包了哪些语言（来自 bundle 目录下的 *.lproj）。
+    public static var supportedLanguages: [String] {
+        let fromBundle = Bundle.module.localizations.filter { !$0.hasPrefix("Base") }
+        return fromBundle.isEmpty ? ["en", "zh-Hans"] : fromBundle.sorted()
+    }
+
+    /// 当前生效语言：取系统偏好语言里第一个我们能提供的，进行前缀匹配（`zh-Hans-CN` → `zh-Hans`）。
+    public static let language: String = resolveLanguage(from: Locale.preferredLanguages)
+
+    private static let table: [String: String] = load(language) ?? [:]
+
+    /// 当前语言下的文案；缺 key 时返回 key 本身，方便一眼看出漏翻。
+    public static func t(_ key: String) -> String {
+        table[key] ?? key
+    }
+
+    /// 带参数的文案，例如 `L10n.t("error.notJSON", detail)` 对应 `"error.notJSON" = "不是合法 JSON：%@";`
+    public static func t(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: table[key] ?? key, arguments: arguments)
+    }
+
+    /// 读取指定语言的整张表（测试用它保证两种语言 key 集合一致）。
+    public static func table(for language: String) -> [String: String]? {
+        load(language)
+    }
+
+    static func resolveLanguage(from preferred: [String]) -> String {
+        let supported = supportedLanguages
+        guard !supported.isEmpty else { return "en" }
+        for candidate in preferred {
+            if let exact = supported.first(where: { candidate == $0 || candidate.hasPrefix($0 + "-") }) {
+                return exact
+            }
+            if let base = candidate.split(separator: "-").first,
+               let match = supported.first(where: { $0 == base }) {
+                return match
+            }
+        }
+        return supported.contains("en") ? "en" : supported[0]
+    }
+
+    private static func load(_ language: String) -> [String: String]? {
+        guard let path = Bundle.module.path(
+            forResource: "Localizable",
+            ofType: "strings",
+            inDirectory: nil,
+            forLocalization: language
+        ) else { return nil }
+        return NSDictionary(contentsOfFile: path) as? [String: String]
+    }
+}

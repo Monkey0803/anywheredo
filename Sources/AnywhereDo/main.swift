@@ -31,6 +31,7 @@ if arguments.contains("--help") || arguments.contains("-h") {
       AnywhereDo --analyze "文本"       只做一次分析并打印结果（调试用）
       AnywhereDo --analyze -            从 stdin 读取内容再分析
       AnywhereDo --check-update         检查 GitHub 上是否有新版本
+      AnywhereDo --strings              打印多语言解析结果（调试用）
       AnywhereDo --accessibility        打印辅助功能授权状态
       AnywhereDo --selection            打印当前聚焦 App 里选中的文字（验证划词）
       AnywhereDo --copy-probe           在终端里验证「合成 ⌘C + 还原剪贴板」兜底
@@ -53,6 +54,16 @@ if let index = arguments.firstIndex(of: "--analyze") {
         text = String(data: data, encoding: .utf8) ?? ""
     }
     printAnalysis(text)
+    exit(0)
+}
+
+if arguments.contains("--strings") {
+    print("系统偏好语言 : \(Locale.preferredLanguages.joined(separator: ", "))")
+    print("资源提供语言 : \(L10n.supportedLanguages.joined(separator: ", "))")
+    print("当前生效语言 : \(L10n.language)")
+    for key in ["kind.url", "kind.color", "ai.summarize", "transform.jsonPretty.title"] {
+        print("  \(key) = \(L10n.t(key))")
+    }
     exit(0)
 }
 
