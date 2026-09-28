@@ -65,6 +65,16 @@ open build/AnywhereDo.app       # a spark icon shows up in the menu bar
 
 The first time you select text, macOS asks for **Accessibility** permission (it is only used to read
 the selected text and its position; the copy mode needs no permission at all).
+Selection mode offers two quieter variants (both in Settings → Popup, off by default):
+
+- **Hover icon**: only a 26pt icon appears first; hover it or click it to expand the full card.
+  If the pointer already rests on the icon when the drag ends, it expands immediately.
+- **Modifier shortcut**: holding ⌘ or ⌥ while selecting runs the first suggestion straight away,
+  with no card. It is a zero-latency path and **never calls the AI** (AI still needs an explicit click).
+
+The "Ignored apps" list in the settings lets you pick from **currently running apps**
+instead of typing bundle ids (manually entered ids still work for apps that are closed).
+
 See [Permissions](#permissions) and [Selection not working? Check permissions first](#selection-not-working-check-permissions-first).
 
 ## How it works
