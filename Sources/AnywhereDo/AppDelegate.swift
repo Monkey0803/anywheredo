@@ -338,19 +338,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func present(analysis: ClipboardAnalysis, sourceApp: String?, anchor: PopupAnchor, compact: Bool) {
         // 悬停小图标模式：先出一个小图标，悬停或点击才展开成完整卡片。
         if store.settings.selectionHoverIcon, case .selection = anchor {
-            let hint = HoverIconView(symbol: analysis.suggestions.first?.symbol ?? "sparkles")
-            hint.onExpand = { [weak self] in
-                guard let self else { return }
-                self.stopHoverPolling()
-                Diagnostics.log("划词：悬停/点击小图标，展开卡片")
-                self.present(analysis: analysis, sourceApp: sourceApp, anchor: anchor, compact: compact)
-            }
-            // 小图标停留久一点，给用户移过去的时间。
-            let delay = store.settings.autoDismissSeconds > 0
-                ? max(store.settings.autoDismissSeconds, 8)
-                : nil
-            popup.showCard(hint, anchor: anchor, dismissAfter: delay)
-            startHoverPolling(hint)
+            presentHoverIcon(analysis: analysis, sourceApp: sourceApp, anchor: anchor, compact: compact)
             return
         }
 
@@ -369,6 +357,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         let delay = store.settings.autoDismissSeconds > 0 ? store.settings.autoDismissSeconds : nil
         popup.showCard(card, anchor: anchor, dismissAfter: delay)
+    }
+
+    /// 只出小图标（悬停或点击后再展开整卡）。正常划词与菜单自检都走这里。
+    private func presentHoverIcon(analysis: ClipboardAnalysis, sourceApp: String?, anchor: PopupAnchor, compact: Bool) {
+        let hint = HoverIconView(symbol: analysis.suggestions.first?.symbol ?? "sparkles")
+        hint.onExpand = { [weak self] in
+            guard let self else { return }
+            self.stopHoverPolling()
+            Diagnostics.log("划词：悬停/点击小图标，展开卡片")
+            self.present(analysis: analysis, sourceApp: sourceApp, anchor: anchor, compact: compact)
+        }
+        // 小图标停留久一点，给用户移过去的时间。
+        let delay = store.settings.autoDismissSeconds > 0
+            ? max(store.settings.autoDismissSeconds, 8)
+            : nil
+        popup.showCard(hint, anchor: anchor, dismissAfter: delay)
+        startHoverPolling(hint)
     }
 
     /// 小图标显示期间轮询「鼠标是不是已经在图标上」。
@@ -617,6 +622,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         logItem.target = self
         menu.addItem(logItem)
 
+        let simulate = NSMenuItem(title: L10n.t("menu.simulateSelection"), action: #selector(simulateSelection), keyEquivalent: "")
+        simulate.target = self
+        menu.addItem(simulate)
+
+        let hoverDemo = NSMenuItem(title: L10n.t("menu.showHoverIcon"), action: #selector(showHoverIconDemo), keyEquivalent: "")
+        hoverDemo.target = self
+        menu.addItem(hoverDemo)
+
         if !recent.isEmpty {
             menu.addItem(.separator())
             let recentItem = NSMenuItem(title: L10n.t("menu.recent"), action: nil, keyEquivalent: "")
@@ -706,6 +719,49 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// 自检：确认当前 App 能不能通过辅助功能读到选区。
+    /// 自检：把一段固定文字当作划词事件走完整链路，含修饰键判定。
+    /// 按住 ⌘/⌥ 再点这个菜单项，就能在不真的拖选的情况下验证「直达」。
+    @objc private func simulateSelection() {
+        var held: [String] = []
+        let flags = NSEvent.modifierFlags
+        if flags.contains(.command) { held.append("⌘") }
+        if flags.contains(.option) { held.append("⌥") }
+        if flags.contains(.control) { held.append("⌃") }
+        if flags.contains(.shift) { held.append("⇧") }
+        let description = held.isEmpty ? "无" : held.joined(separator: " ")
+        Diagnostics.log("自检：模拟划词，当前修饰键=\(description)")
+
+        handleSelection(SelectionEvent(
+            text: "https://github.com/apple/swift",
+            bounds: nil,
+            anchorPoint: NSEvent.mouseLocation,
+            sourceAppName: "自检",
+            sourceBundleID: nil,
+            isSensitive: false,
+            viaCopyFallback: false,
+            estimatedLineCount: nil
+        ))
+    }
+
+    /// 自检：在鼠标处显示悬停小图标，用来确认「悬停才展开」这条链路。
+    @objc private func showHoverIconDemo() {
+        Diagnostics.log("自检：在鼠标处显示悬停小图标")
+        let analysis = analyzer.analyze(
+            "https://github.com/apple/swift",
+            options: AnalysisOptions(
+                maxLength: store.settings.maxContentLength,
+                aiEnabled: false,
+                estimatedLineCount: nil
+            )
+        )
+        presentHoverIcon(
+            analysis: analysis,
+            sourceApp: "自检",
+            anchor: .point(NSEvent.mouseLocation),
+            compact: true
+        )
+    }
+
     @objc private func diagnoseSelection() {
         NSApp.activate(ignoringOtherApps: true)
         let selectionInfo = Accessibility.currentSelectionText().map { L10n.t("selfcheck.readSome", $0.count) } ?? L10n.t("selfcheck.noSelectionShort")
