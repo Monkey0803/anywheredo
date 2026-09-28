@@ -300,3 +300,4 @@
 "settings.ignoredAppsMenuTitle" = "Choose an app to ignore";
 "settings.ignoredAppsPlaceholder" = "or type bundle ids manually, comma-separated";
 "settings.ignoredAppsRemove" = "Remove";
+"settings.modifierInstant" = "Holding ⌘/⌥ while selecting runs the first suggestion directly (no card, no AI call)";

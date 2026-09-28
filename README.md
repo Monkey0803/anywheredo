@@ -229,6 +229,8 @@ printf '%s' '{"a":1}' | .build/release/AnywhereDo --analyze -
 | `maxContentLength` | 面板里保留的最大字符数（默认 3000，防止复制大文件卡界面） |
 | `ignoreSensitive` | 忽略带 `org.nspasteboard.ConcealedType` 等标记的内容 |
 | `ignoredBundleIDs` | 来源 App 黑名单，默认含 1Password / Bitwarden / 钥匙串等 |
+| `selectionModifierInstant` | 按住 ⌘/⌥ 划词直接执行第一条建议（默认 `false`，不会调用 AI） |
+| `ignoredBundleIDs` | 忽略的 App（bundle id 数组，设置里可从运行中的 App 挑选） |
 | `checkForUpdates` | 启动时检查新版本（默认 `true`） |
 | `lastUpdateCheck` | 上次检查时间，用于限流（自动写入） |
 | `ai.*` | OpenAI 兼容接口：`baseURL` + `model` + `apiKey`（DeepSeek / OpenAI / Ollama 均可） |

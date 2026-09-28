@@ -249,6 +249,8 @@ Menu-bar icon → **Settings…**, or edit `~/Library/Application Support/Anywhe
 | `maxContentLength` | max characters kept for the card (default 3000, keeps huge copies from freezing the UI) |
 | `ignoreSensitive` | ignore content flagged with `org.nspasteboard.ConcealedType` etc. |
 | `ignoredBundleIDs` | source-app block list (1Password / Bitwarden / Keychain by default) |
+| `selectionModifierInstant` | hold ⌘/⌥ while selecting to run the first suggestion directly (default `false`, never calls AI) |
+| `ignoredBundleIDs` | ignored apps (array of bundle ids; pickable from running apps in the settings) |
 | `checkForUpdates` | check for a new release at launch (default `true`) |
 | `lastUpdateCheck` | timestamp of the last check, used for rate limiting (written automatically) |
 | `ai.*` | OpenAI-compatible endpoint: `baseURL` + `model` + `apiKey` (DeepSeek / OpenAI / Ollama) |

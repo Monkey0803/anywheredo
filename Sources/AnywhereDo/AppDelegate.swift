@@ -242,6 +242,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func handleSelection(_ event: SelectionEvent) {
+        // 按住 ⌘/⌥ 划词：直接执行第一条建议，不弹卡片。
+        if store.settings.selectionModifierInstant,
+           !NSEvent.modifierFlags.intersection([.command, .option]).isEmpty,
+           performFirstSuggestion(for: event) {
+            return
+        }
         let anchor: PopupAnchor = event.bounds.map { PopupAnchor.selection($0) }
             ?? .point(event.anchorPoint ?? NSEvent.mouseLocation)
         handle(
@@ -294,6 +300,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         lastAnchor = anchor
         remember(analysis)
         present(analysis: analysis, sourceApp: sourceAppName, anchor: anchor, compact: compact)
+    }
+
+    /// 修饰键直达：分析选区并执行第一条建议。
+    /// 返回 false 表示这次没执行（未开启、没有建议、被忽略等），调用方应回退到弹卡片。
+    private func performFirstSuggestion(for event: SelectionEvent) -> Bool {
+        let settings = store.settings
+        guard settings.enabled, !event.text.isEmpty else { return false }
+        if let id = event.sourceBundleID, settings.ignoredBundleIDs.contains(id) { return false }
+        if settings.ignoreSensitive && event.isSensitive { return false }
+
+        // 刻意不启用 AI：直达是「零等待」路径，不该发网络请求；AI 仍然要显式点击。
+        let analysis = analyzer.analyze(
+            event.text,
+            options: AnalysisOptions(
+                maxLength: settings.maxContentLength,
+                aiEnabled: false,
+                estimatedLineCount: event.estimatedLineCount
+            )
+        )
+        guard analysis.kind != .empty, let first = analysis.suggestions.first else { return false }
+
+        lastTrigger = (event.text, Date())
+        remember(analysis)
+        Diagnostics.log("划词：修饰键直达，执行「\(first.title)」")
+        perform(first)
+        return true
     }
 
     private func remember(_ analysis: ClipboardAnalysis) {

@@ -27,6 +27,8 @@ struct AppSettings: Codable, Equatable {
     /// 对读不到选区的 App（Chrome/Electron）用「合成 ⌘C + 还原剪贴板」兜底。
     /// 默认关闭：它会短暂改写剪贴板，只有在你能接受时才打开。
     var selectionCopyFallback: Bool = false
+    /// 按住 ⌘/⌥ 划词时直接执行第一条建议（不弹卡片，也不调用 AI）。
+    var selectionModifierInstant: Bool = false
     /// 是否在弹窗里显示内容预览。
     var showPreview: Bool = true
     /// 是否让弹窗可以接受 Esc / 数字快捷键。
@@ -72,6 +74,7 @@ struct AppSettings: Codable, Equatable {
         watchSelection = try container.decodeIfPresent(Bool.self, forKey: .watchSelection) ?? defaults.watchSelection
         selectionCompact = try container.decodeIfPresent(Bool.self, forKey: .selectionCompact) ?? defaults.selectionCompact
         selectionCopyFallback = try container.decodeIfPresent(Bool.self, forKey: .selectionCopyFallback) ?? defaults.selectionCopyFallback
+        selectionModifierInstant = try container.decodeIfPresent(Bool.self, forKey: .selectionModifierInstant) ?? defaults.selectionModifierInstant
         showPreview = try container.decodeIfPresent(Bool.self, forKey: .showPreview) ?? defaults.showPreview
         keyboardShortcuts = try container.decodeIfPresent(Bool.self, forKey: .keyboardShortcuts) ?? defaults.keyboardShortcuts
         autoDismissSeconds = try container.decodeIfPresent(Double.self, forKey: .autoDismissSeconds) ?? defaults.autoDismissSeconds

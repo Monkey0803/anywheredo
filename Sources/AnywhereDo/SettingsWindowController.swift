@@ -19,6 +19,7 @@ final class SettingsWindowController: NSWindowController {
     private let selectionCompactCheckbox = NSButton(checkboxWithTitle: L10n.t("settings.compactCard"), target: nil, action: nil)
     private let selectionFallbackCheckbox = NSButton(checkboxWithTitle: L10n.t("settings.copyFallback"), target: nil, action: nil)
     private let keyboardCheckbox = NSButton(checkboxWithTitle: L10n.t("settings.keyboard"), target: nil, action: nil)
+    private let modifierInstantCheckbox = NSButton(checkboxWithTitle: L10n.t("settings.modifierInstant"), target: nil, action: nil)
     private let autoDismissPopup = NSPopUpButton(frame: .zero, pullsDown: false)
     private let maxLengthPopup = NSPopUpButton(frame: .zero, pullsDown: false)
 
@@ -113,7 +114,7 @@ final class SettingsWindowController: NSWindowController {
         stack.addArrangedSubview(separatorBox())
         stack.addArrangedSubview(sectionTitle(L10n.t("settings.section.popup")))
 
-        for control in [previewCheckbox, selectionCompactCheckbox, keyboardCheckbox] {
+        for control in [previewCheckbox, selectionCompactCheckbox, modifierInstantCheckbox, keyboardCheckbox] {
             wire(control)
             stack.addArrangedSubview(control)
         }
@@ -279,6 +280,7 @@ final class SettingsWindowController: NSWindowController {
         selectionCompactCheckbox.state = settings.selectionCompact ? .on : .off
         selectionFallbackCheckbox.state = settings.selectionCopyFallback ? .on : .off
         keyboardCheckbox.state = settings.keyboardShortcuts ? .on : .off
+        modifierInstantCheckbox.state = settings.selectionModifierInstant ? .on : .off
         sensitiveCheckbox.state = settings.ignoreSensitive ? .on : .off
         launchAtLoginCheckbox.state = settings.launchAtLogin ? .on : .off
         checkUpdatesCheckbox.state = settings.checkForUpdates ? .on : .off
@@ -327,6 +329,7 @@ final class SettingsWindowController: NSWindowController {
             settings.selectionCompact = selectionCompactCheckbox.state == .on
             settings.selectionCopyFallback = selectionFallbackCheckbox.state == .on
             settings.keyboardShortcuts = keyboardCheckbox.state == .on
+            settings.selectionModifierInstant = modifierInstantCheckbox.state == .on
             settings.ignoreSensitive = sensitiveCheckbox.state == .on
             if autoDismissPopup.indexOfSelectedItem >= 0,
                autoDismissPopup.indexOfSelectedItem < autoDismissOptions.count {
