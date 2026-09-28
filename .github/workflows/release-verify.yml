@@ -1,0 +1,98 @@
+name: 发布产物与 tap 一致性检查
+
+# 每次发布后跑一遍：把 Release 附件真下来验一遍签名、架构、版本号，再核对 tap 的 cask。
+# 不需要任何额外 secret —— 这是防止「发了新版但 tap 还指着旧包」的兜底。
+on:
+  release:
+    types: [published]
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: 下载最新 Release 并校验
+    runs-on: macos-latest
+
+    steps:
+      - name: 取最新 Release 的信息与附件
+        id: release
+        run: |
+          set -euo pipefail
+          JSON=$(curl -fsSL https://api.github.com/repos/Monkey0803/anywheredo/releases/latest)
+          echo "$JSON" > /tmp/release.json
+          TAG=$(python3 -c 'import json;print(json.load(open("/tmp/release.json"))["tag_name"])')
+          URL=$(python3 -c '
+          import json
+          assets = json.load(open("/tmp/release.json"))["assets"]
+          zips = [a for a in assets if a["name"].endswith(".zip")]
+          assert zips, "Release 里没有 .zip 附件"
+          print(zips[0]["browser_download_url"])')
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "最新版本：$TAG"
+          echo "附件：$URL"
+
+      - name: 下载附件
+        run: |
+          curl -fsSL -o /tmp/app.zip "${{ steps.release.outputs.url }}"
+          ls -lh /tmp/app.zip
+          shasum -a 256 /tmp/app.zip
+
+      - name: 校验签名 / 架构 / 版本号 / 本地化资源
+        id: verify
+        run: |
+          set -euo pipefail
+          ditto -x -k /tmp/app.zip /tmp/unpacked
+          APP=$(find /tmp/unpacked -maxdepth 2 -name "AnywhereDo.app" | head -1)
+          test -n "$APP" || { echo "压缩包里没有 AnywhereDo.app"; exit 1; }
+
+          TAG="${{ steps.release.outputs.tag }}"
+          EXPECTED="${TAG#v}"
+
+          echo "== 版本号 =="
+          PLIST=$(plutil -extract CFBundleShortVersionString raw "$APP/Contents/Info.plist")
+          echo "包内=$PLIST  标签=$EXPECTED"
+          [ "$PLIST" = "$EXPECTED" ] || { echo "❌ 包内版本号与 Release 标签不一致"; exit 1; }
+
+          echo "== 架构 =="
+          lipo -info "$APP/Contents/MacOS/AnywhereDo"
+          lipo -info "$APP/Contents/MacOS/AnywhereDo" | grep -q x86_64 || { echo "❌ 缺 x86_64"; exit 1; }
+          lipo -info "$APP/Contents/MacOS/AnywhereDo" | grep -q arm64 || { echo "❌ 缺 arm64"; exit 1; }
+
+          echo "== 签名 requirement（必须不含 cdhash） =="
+          codesign --verify --strict --verbose=2 "$APP"
+          REQ=$(codesign -d -r- "$APP" 2>&1 | tail -1)
+          echo "$REQ"
+          case "$REQ" in
+            *cdhash*) echo "❌ requirement 含 cdhash：用户每次升级都要重新授权辅助功能"; exit 1 ;;
+          esac
+
+          echo "== 本地化资源 =="
+          test -d "$APP/Contents/Resources/AnywhereDo_AnywhereDoCore.bundle" || { echo "❌ 缺本地化资源"; exit 1; }
+
+          SHA=$(shasum -a 256 /tmp/app.zip | awk '{print $1}')
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "✅ 附件自检通过"
+
+      - name: 核对 tap 的 cask 是否指向这个版本
+        run: |
+          set -euo pipefail
+          CASK_URL="https://raw.githubusercontent.com/Monkey0803/homebrew-tap/main/Casks/anywheredo.rb"
+          curl -fsSL "$CASK_URL" -o /tmp/anywheredo.rb
+          CASK_VERSION=$(grep -oE '^  version "[^"]+"' /tmp/anywheredo.rb | sed -E 's/.*"([^"]+)".*/\1/')
+          CASK_SHA=$(grep -oE '^  sha256 "[^"]+"' /tmp/anywheredo.rb | sed -E 's/.*"([^"]+)".*/\1/')
+          RELEASE_VERSION="${{ steps.release.outputs.tag }}"
+          RELEASE_VERSION="${RELEASE_VERSION#v}"
+          SHA="${{ steps.verify.outputs.sha256 }}"
+
+          echo "tap  version = $CASK_VERSION   （期望 $RELEASE_VERSION）"
+          echo "tap  sha256  = $CASK_SHA"
+          echo "附件 sha256  = $SHA"
+
+          if [ "$CASK_VERSION" != "$RELEASE_VERSION" ] || [ "$CASK_SHA" != "$SHA" ]; then
+            echo "❌ tap 与最新 Release 不一致，请更新 homebrew-tap 的 Casks/anywheredo.rb"
+            echo "   （本地跑 ./scripts/release.sh 会自动更新 tap）"
+            exit 1
+          fi
+          echo "✅ tap 指向的就是最新附件"

@@ -40,27 +40,53 @@ gh secret set SIGNING_P12_PASSWORD --body '<p12密码>' --repo Monkey0803/anywhe
 
 ## 打一个版本
 
-```bash
-# 1. 改版本号（唯一来源：Resources/Info.plist 的 CFBundleShortVersionString）
-#    构建时会写进 App，`--version` 与包内 Info.plist 都从它取
+一条命令（构建 → 签名 → 校验 → 打包 → 建 Release → 更新 tap）：
 
-# 2. 构建通用二进制并用证书签名
+```bash
+# 1. 改版本号：唯一来源是 Sources/AnywhereDoCore/Version.swift 的 marketing
+#    （构建时会注入 App 的 Info.plist，CI 会断言三处一致）
+
+# 2. 先干跑一遍，它会构建、签名、校验、打包，但不动 git、不发 Release
 SIGNING_IDENTITY="AnywhereDo Signing" \
 SIGNING_KEYCHAIN="$HOME/Library/Keychains/anywheredo-signing.keychain-db" \
+./scripts/release.sh --dry-run
+
+# 3. 确认无误后正式发版
+SIGNING_IDENTITY="AnywhereDo Signing" \
+SIGNING_KEYCHAIN="$HOME/Library/Keychains/anywheredo-signing.keychain-db" \
+./scripts/release.sh
+```
+
+脚本会替你拦住这些情况：工作区不干净、不在 main、与远端不一致、tag 已存在、
+包内版本号与 `Version.swift` 不一致、缺架构、**签名 requirement 含 cdhash**、缺本地化资源。
+
+正式发版时它会：
+
+1. 建 tag 与 GitHub Release，上传 `AnywhereDo-<版本>-universal.zip`
+2. clone tap 仓库，把 `Casks/anywheredo.rb` 的 `version` 与 `sha256` 改成新值并推送
+
+### 发版后的自动校验
+
+`.github/workflows/release-verify.yml` 会在每次 Release 发布后（以及每周一）把附件**真的下载下来**重验：
+
+- 包内版本号 == Release 标签
+- `lipo` 同时含 `x86_64` 与 `arm64`
+- `codesign --verify` 通过，且 designated requirement **不含 cdhash**
+- 本地化资源 bundle 存在
+- 附件的 sha256 与 tap cask 里写的一致（防止「发了新版但 tap 还指着旧包」）
+
+> v1.0.0 是 ad-hoc 签名、也没有本地化资源，所以这个检查对它是**预期失败**的；
+> 从第一个证书签名的版本开始才应该全绿。
+
+### 手工做法（脚本出问题时的退路）
+
+```bash
 UNIVERSAL=1 ./scripts/build_app.sh
-
-# 3. 检查输出的 designated requirement：必须**不含 cdhash**
-codesign -d -r- build/AnywhereDo.app
-
-# 4. 打包
+codesign -d -r- build/AnywhereDo.app      # 必须不含 cdhash
 ditto -c -k --keepParent build/AnywhereDo.app /tmp/AnywhereDo-<版本>-universal.zip
 shasum -a 256 /tmp/AnywhereDo-<版本>-universal.zip
-
-# 5. 建 release（notes 里写清安装方式与 SHA-256）
 gh release create v<版本> /tmp/AnywhereDo-<版本>-universal.zip --title "AnywhereDo <版本>" --notes-file …
-
-# 6. 更新 tap 仓库的 cask：version + sha256
-#    （这一步会由 .github/workflows/release.yml 自动化）
+# 然后手动改 tap 的 version / sha256 并推送
 ```
 
 ## 发布前检查清单
